@@ -13,6 +13,7 @@ The most basic usage is to record what data files you read and write, and maybe 
 
 ```python
 import dotscience as ds
+import pandas.dataframe as df
 
 # Wrap the names of files you read with ds.input() - it just returns the filename:
 df.from_csv(ds.input('input_file.csv'))
@@ -253,3 +254,5 @@ for smoothing in [1.0, 1.5, 2.0]:
     # Publish this run
     ds.publish('Tested the model with smoothing %s' % (smoothing,))
 ```
+
+In that example, we've loaded the data into memory once and re-used it in each run - so we've put in an explicit call to `start()` to record when the actual run starts; we could have put a call to `end()` just before `publish()`, but `publish()` assumes the run is ended when you publish it anyway. If you don't call `start()` and `end()` at all when there's multiple calls to `publish()`, Dotscience will try to be smart about guessing what the start and end times are - the first run will go from when the `dotscience` module is imported until the first `publish()`; then subsequent runs will be timed from the last `publish()` to the next.
