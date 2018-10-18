@@ -13,10 +13,11 @@ The most basic usage is to record what data files you read and write, and maybe 
 
 ```python
 import dotscience as ds
-import pandas.dataframe as df
+import pandas as pd
+
 
 # Wrap the names of files you read with ds.input() - it just returns the filename:
-df.from_csv(ds.input('input_file.csv'))
+df = pd.read_csv(ds.input('input_file.csv'))
 
 # Likewise with files you write to:
 df.to_csv(ds.output('output_file.csv'))
