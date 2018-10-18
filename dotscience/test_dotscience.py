@@ -289,6 +289,36 @@ def test_null():
     assert m["parameters"] == {}
     assert m["summary"] == {}
 
+def test_auto_start():
+    s=io.StringIO()
+    t = dotscience._defaultDS.currentRun._start
+    dotscience.publish(stream=s)
+    m = _parse(s.getvalue())
+    assert m["start"] == t.strftime("%Y%m%dT%H%M%S.%f")
+    assert m["input"] == []
+    assert m["output"] == []
+    assert m["labels"] == {}
+    assert m["parameters"] == {}
+    assert m["summary"] == {}
+
+# How to test auto_end? The currentRun object is reset by publish() so we have no way to get the value. Parse it back and confirm it's between a saved dotscience._defaultDS.currentRun._start and now?
+
+def test_start_end():
+    s=io.StringIO()
+    dotscience.start()
+    t1 = dotscience._defaultDS.currentRun._start
+    dotscience.end()
+    t2 = dotscience._defaultDS.currentRun._end
+    dotscience.publish(stream=s)
+    m = _parse(s.getvalue())
+    assert m["start"] == t1.strftime("%Y%m%dT%H%M%S.%f")
+    assert m["end"] == t2.strftime("%Y%m%dT%H%M%S.%f")
+    assert m["input"] == []
+    assert m["output"] == []
+    assert m["labels"] == {}
+    assert m["parameters"] == {}
+    assert m["summary"] == {}
+
 @given(text())
 def test_description_a(d):
     s=io.StringIO()
@@ -452,9 +482,7 @@ def test_label_1b(d):
 @given(text(),text())
 def test_label_n(a, b):
     s=io.StringIO()
-    note("varargs")
     dotscience.add_labels("a", a)
-    note("kwargs")
     dotscience.add_labels(b=b)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -491,9 +519,7 @@ def test_summary_1b(d):
 @given(text(),text())
 def test_summary_n(a, b):
     s=io.StringIO()
-    note("varargs")
     dotscience.add_summaries("a", a)
-    note("kwargs")
     dotscience.add_summaries(b=b)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -530,9 +556,7 @@ def test_parameter_1b(d):
 @given(text(),text())
 def test_parameter_n(a, b):
     s=io.StringIO()
-    note("varargs")
     dotscience.add_parameters("a", a)
-    note("kwargs")
     dotscience.add_parameters(b=b)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -541,3 +565,17 @@ def test_parameter_n(a, b):
     assert m["parameters"] == {"a": a, "b": b}
     assert m["labels"] == {}
     assert m["summary"] == {}
+
+def test_multi_publish():
+    s1=io.StringIO()
+    dotscience.publish("Hello", stream=s1)
+    s2=io.StringIO()
+    dotscience.publish("World", stream=s2)
+    m1 = _parse(s1.getvalue())
+    m2 = _parse(s2.getvalue())
+
+    assert m1["description"] == "Hello"
+    assert m2["description"] == "World"
+    assert m1["__ID"] != m2["__ID"]
+    assert m1["start"] != m2["start"]
+    assert m1["end"] != m2["end"]

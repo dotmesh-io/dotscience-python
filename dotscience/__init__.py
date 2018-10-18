@@ -161,7 +161,7 @@ class Dotscience:
         self.currentRun = Run()
         self.currentRun.start()
 
-    def publish(self, stream = sys.stdout, description = None):
+    def publish(self, description = None, stream = sys.stdout):
         # end() will set the end timestamp, if the user hasn't already
         # done so manually
         self.currentRun.end()
@@ -244,8 +244,8 @@ _defaultDS = Dotscience()
 
 # Proxy things through to the default Dotscience
 
-def publish(stream = sys.stdout, description = None):
-    _defaultDS.publish(stream, description)
+def publish(description = None, stream = sys.stdout):
+    _defaultDS.publish(description, stream)
 
 def start():
     _defaultDS.start()
