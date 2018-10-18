@@ -239,8 +239,8 @@ class Dotscience:
     def debug(self):
         self.currentRun.debug()
 
+# Default run start time is set HERE at module load time
 _defaultDS = Dotscience()
-
 
 # Proxy things through to the default Dotscience
 
