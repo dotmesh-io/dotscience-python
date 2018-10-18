@@ -74,7 +74,7 @@ If you're assembling an error message to use for some other reason, the dotscien
 import dotscience as ds
 
 ...
-throw DataFormatError(ds.error('The data wasn't correctly formatted'))
+raise DataFormatError(ds.error('The data wasn't correctly formatted'))
 ...
 
 ds.publish('Tried, in vain, to do some awesome data science!')
