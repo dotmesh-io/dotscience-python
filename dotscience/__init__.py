@@ -3,18 +3,20 @@ name = "dotscience"
 import json
 import datetime
 import uuid
+import sys
 
 class Run:
-    _id = None
-    _error = None
-    _description = None
-    _inputs = []
-    _outputs = []
-    _labels = {}
-    _summary = {}
-    _parameters = {}
-    _start = None
-    _end = None
+    def __init__(self):
+        self._id = None
+        self._error = None
+        self._description = None
+        self._inputs = []
+        self._outputs = []
+        self._labels = {}
+        self._summary = {}
+        self._parameters = {}
+        self._start = None
+        self._end = None
 
     def start(self):
         # Subsequent start()s overwrite, as the system does one at the
@@ -24,7 +26,7 @@ class Run:
     def end(self):
         # Only the first end() is kept, as the system does one at the
         # end, but that shouldn't override one the user has done.
-        if self._end != None:
+        if self._end == None:
             self._end = datetime.datetime.utcnow()
 
     def set_error(self, error):
@@ -42,14 +44,24 @@ class Run:
         return description
 
     def add_input(self, filename):
+        ## FIXME: Canonicalise filename
         self._inputs.append(str(filename))
+
+    def add_inputs(self, *args):
+        for filename in args:
+            self.add_input(filename)
 
     def input(self, filename):
         self.add_input(filename)
         return filename
 
     def add_output(self, filename):
+        ## FIXME: Canonicalise filename
         self._outputs.append(str(filename))
+
+    def add_outputs(self, *args):
+        for filename in args:
+            self.add_output(filename)
 
     def output(self, filename):
         self.add_output(filename)
@@ -90,7 +102,6 @@ class Run:
     def add_parameter(self, label, value):
         self._parameters[str(label)] = str(value)
 
-
     # Supports any combination of ("a", "val of a", "b", "val of b") and (c="val of c")
     def add_parameters(self, *args, **kwargs):
         if kwargs is not None:
@@ -107,11 +118,11 @@ class Run:
     def metadata(self):
         r = {
             "version": "1",
-            "input": json.dumps(self._inputs),
-            "output": json.dumps(self._outputs),
-            "labels": json.dumps(self._labels),
-            "summary": json.dumps(self._summary),
-            "parameters": json.dumps(self._parameters)
+            "input": self._inputs,
+            "output": self._outputs,
+            "labels": self._labels,
+            "summary": self._summary,
+            "parameters": self._parameters
         }
 
         if self._error != None:
@@ -128,7 +139,7 @@ class Run:
 
         return r
 
-    def str(self):
+    def __str__(self):
         jsonMetadata = json.dumps(self.metadata(), sort_keys=True, indent=4)
 
         while self._id == None or jsonMetadata.find(self._id) != -1:
@@ -147,17 +158,17 @@ class Dotscience:
         self._startRun()
 
     def _startRun(self):
-        currentRun = Run()
-        currentRun.start()
+        self.currentRun = Run()
+        self.currentRun.start()
 
-    def publish(self, description = None):
+    def publish(self, stream = sys.stdout, description = None):
         # end() will set the end timestamp, if the user hasn't already
         # done so manually
         self.currentRun.end()
         if description != None:
             self.currentRun.set_description(description)
 
-        print self.currentRun.str()
+        stream.write(str(self.currentRun))
         self._startRun()
 
     # Proxy things through to the current run
@@ -183,11 +194,17 @@ class Dotscience:
     def add_input(self, filename):
         self.currentRun.add_input(filename)
 
+    def add_inputs(self, *args):
+        self.currentRun.add_inputs(*args)
+
     def input(self, filename):
         return self.currentRun.input(filename)
 
     def add_output(self, filename):
         self.currentRun.add_output(filename)
+
+    def add_outputs(self, *args):
+        self.currentRun.add_outputs(*args)
 
     def output(self, filename):
         return self.currentRun.output(filename)
@@ -227,8 +244,8 @@ _defaultDS = Dotscience()
 
 # Proxy things through to the default Dotscience
 
-def publish(description = None):
-    _defaultDS.publish(description)
+def publish(stream = sys.stdout, description = None):
+    _defaultDS.publish(stream, description)
 
 def start():
     _defaultDS.start()
@@ -251,41 +268,48 @@ def description(description):
 def add_input(filename):
     _defaultDS.add_input(filename)
 
-def input(filename)
+def add_inputs(*filenames):
+    _defaultDS.add_inputs(*filenames)
+
+def input(filename):
     return _defaultDS.input(filename)
 
 def add_output(filename):
     _defaultDS.add_output(filename)
 
-def output(filename)
+def add_outputs(*filenames):
+    _defaultDS.add_outputs(*filenames)
+
+def output(filename):
     return _defaultDS.output(filename)
 
 def add_label(label, value):
     _defaultDS.add_label(label, value)
 
-def add_labels(self, *args, **kwargs):
+def add_labels(*args, **kwargs):
     _defaultDS.add_labels(*args, **kwargs)
 
-def label(label, value)
+def label(label, value):
     return _defaultDS.label(label, value)
 
 def add_summary(label, value):
     _defaultDS.add_summary(label, value)
 
-def add_summaries(self, *args, **kwargs):
+def add_summaries(*args, **kwargs):
     _defaultDS.add_summaries(*args, **kwargs)
 
-def summary(label, value)
+def summary(label, value):
     return _defaultDS.summary(label, value)
 
 def add_parameter(label, value):
     _defaultDS.add_parameter(label, value)
 
-def add_parameters(self, *args, **kwargs):
+def add_parameters(*args, **kwargs):
     _defaultDS.add_parameters(*args, **kwargs)
 
-def parameter(label, value)
+def parameter(label, value):
     return _defaultDS.parameter(label, value)
 
 def debug():
     _defaultDS.debug()
+
