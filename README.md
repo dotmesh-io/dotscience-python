@@ -15,7 +15,6 @@ The most basic usage is to record what data files you read and write, and maybe 
 import dotscience as ds
 import pandas as pd
 
-
 # Wrap the names of files you read with ds.input() - it just returns the filename:
 df = pd.read_csv(ds.input('input_file.csv'))
 
