@@ -16,7 +16,7 @@ setuptools.setup(
     tests_require=['pytest', 'hypothesis'],
     classifiers=[
         "Programming Language :: Python :: 3",
-# FIXME        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
 )
