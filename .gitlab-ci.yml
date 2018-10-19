@@ -42,5 +42,5 @@ deploy_pypi:
     - ubuntu-bionic
     - fast
   script:
-    - ./shipit-pypi.sh
+    - ./shipit-pypi.sh -u $PYPI_USER -p $PYPI_PASSWORD
   when: manual
