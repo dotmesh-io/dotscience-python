@@ -22,6 +22,7 @@ deploy_docker_image:
     - ubuntu-bionic
     - fast
   script:
+    - docker login -u $QUAY_USER -p $QUAY_PASSWORD $RELEASE_DOCKER_REGISTRY
     - ./shipit-docker.sh
 
 deploy_docker_image_latest:
@@ -30,6 +31,7 @@ deploy_docker_image_latest:
     - ubuntu-bionic
     - fast
   script:
+    - docker login -u $QUAY_USER -p $QUAY_PASSWORD $RELEASE_DOCKER_REGISTRY
     - CI_DOCKER_PYTHON_IMAGE=$RELEASE_DOCKER_REGISTRY/$RELEASE_DOCKER_REPOSITORY/dotscience-python3:latest ./shipit-docker.sh
   when: manual
 
