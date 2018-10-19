@@ -1,0 +1,10 @@
+FROM python:3
+
+RUN pip install pytest
+RUN pip install hypothesis
+
+RUN mkdir dsbuild
+COPY dotscience ./dsbuild/dotscience
+COPY setup.py ./dsbuild
+COPY README.md ./dsbuild
+COPY LICENSE ./dsbuild

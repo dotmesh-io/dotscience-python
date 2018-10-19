@@ -1,0 +1,7 @@
+FROM python:3
+
+RUN mkdir dsbuild
+COPY dotscience ./dsbuild/dotscience
+COPY setup.py ./dsbuild
+COPY README.md ./dsbuild
+COPY LICENSE ./dsbuild

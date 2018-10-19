@@ -14,6 +14,7 @@ setuptools.setup(
     url="https://github.com/dotmesh-io/dotscience-python",
     packages=setuptools.find_packages(),
     tests_require=['pytest', 'hypothesis'],
+    zip_safe=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

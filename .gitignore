@@ -1,6 +1,9 @@
 # Emacs backup files
 *~
 
+# Temporary dockerfile
+Dockerfile.python.tmp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
