@@ -35,7 +35,13 @@ There's a lot more than just data files and summary stats that Dotscience will k
 
 ### Start and end time
 
-The library will guess when your job starts and ends, from when you load the `dotscience` module until you call `publish()` (although it gets a bit more complex with multiple runs; see below). But if your script does a lot of tedious setup and teardown and you don't want those included in the run times, that's easily done. Just call `start()` and `end()` before and after the real work and the library will record the current time when those functions are called.
+The library will try to guess when your job starts and ends, from when you load the `dotscience` module until you call `publish()` (although it gets a bit more complex with multiple runs; see below).
+
+If you're running in Jupyter, that means it'll include the time you spend working on your notebook, thinking, and so on as well as the time actually spent running the steps, which probably isn't what you want. To get better tracking of the run times, to keep track of what operations are slow and to cross-reference the time periods against other stuff running on the same computers to see if the workloads are interfering, it's a good idea to explicitly tell Dotscience when your steps start and stop.
+
+Even when running Python scripts through `ds run`, it still helps to declare start and end times - if your script does a lot of tedious setup and teardown, you probably don't want those included in the run times.
+
+Just call `start()` and `end()` before and after the real work and the library will record the current time when those functions are called. If you miss the `end()` it'll assume that your run has finished when you call `publish()`; this is often a good assumption, so you can often just call `start()` at the start and `publish()` at the end and be done with it.
 
 ```python
 import dotscience as ds
@@ -49,6 +55,20 @@ ds.start()
 ds.end()
 
 ...cleanup code...
+
+ds.publish('Did some awesome data science!')
+```
+
+or:
+
+```python
+import dotscience as ds
+
+...setup code...
+
+ds.start()
+
+...the real work...
 
 ds.publish('Did some awesome data science!')
 ```
