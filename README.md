@@ -7,6 +7,41 @@ Instrumenting your workloads means making them output metadata about
 what they're doing - which Dotscience can collect and use to make your
 life easier!
 
+## Installation
+
+You can get the Dotscience python library in one of three ways.
+
+### Use the ready-made Docker image
+
+We've made a Docker image by taking the stock `python:3` image and pre-installing the Dotscience library like so:
+
+```
+$ docker run -ti quay.io/dotmesh/dotscience-python3:latest
+Python 3.7.0 (default, Aug  4 2018, 02:33:39) 
+[GCC 6.3.0 20170516] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import dotscience as ds
+```
+
+### Install it from PyPi
+
+```
+$ pip install dotscience
+Collecting dotscience
+  Downloading https://files.pythonhosted.org/packages/b2/e9/81db25b03e4c2b0115a7cd9078f0811b709a159493bb1b30e96f0906e1a1/dotscience-0.0.1-py3-none-any.whl
+Installing collected packages: dotscience
+Successfully installed dotscience-0.0.1
+$ python
+Python 3.7.0 (default, Sep  5 2018, 03:25:31) 
+[GCC 6.3.0 20170516] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import dotscience as ds
+```
+
+### Use the ready-made Jupyter image
+
+Coming soon!
+
 ## Quick Start
 
 The most basic usage is to record what data files you read and write, and maybe to declare some summary statistics about how well the job went.
