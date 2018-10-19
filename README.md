@@ -1,7 +1,7 @@
 # dotscience-python
 
 Hi! Welcome to the python library for helping you instrument your
-Dotscience workloads.
+[Dotscience](https://www.dotscience.com/) workloads.
 
 Instrumenting your workloads means making them output metadata about
 what they're doing - which Dotscience can collect and use to make your
