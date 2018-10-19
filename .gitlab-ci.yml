@@ -1,0 +1,44 @@
+variables:
+  RELEASE_DOCKER_REGISTRY: quay.io
+  RELEASE_DOCKER_REPOSITORY: dotmesh
+  CI_DOCKER_TAG: $CI_COMMIT_SHA
+  CI_DOCKER_PYTHON_IMAGE: $RELEASE_DOCKER_REGISTRY/$RELEASE_DOCKER_REPOSITORY/dotscience-python3:$CI_DOCKER_TAG
+
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  tags:
+    - ubuntu-bionic
+    - fast
+  script:
+    - ./test.sh
+
+deploy_docker_image:
+  stage: deploy
+  tags:
+    - ubuntu-bionic
+    - fast
+  script:
+    - ./shipit-docker.sh
+
+deploy_docker_image_latest:
+  stage: deploy
+  tags:
+    - ubuntu-bionic
+    - fast
+  script:
+    - CI_DOCKER_PYTHON_IMAGE=$RELEASE_DOCKER_REGISTRY/$RELEASE_DOCKER_REPOSITORY/dotscience-python3:latest ./shipit-docker.sh
+  when: manual
+
+# Needs PYPI_USER and PYPI_PASSWORD set; and optionally PYPI_REPO if we're using test pypi
+deploy_pypi:
+  stage: deploy
+  tags:
+    - ubuntu-bionic
+    - fast
+  script:
+    - ./shipit-pypi.sh
+  when: manual
