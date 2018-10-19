@@ -168,7 +168,7 @@ class Dotscience:
         if description != None:
             self.currentRun.set_description(description)
 
-        stream.write(str(self.currentRun))
+        stream.write(str(self.currentRun) + "\n")
         self._startRun()
 
     # Proxy things through to the current run
