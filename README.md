@@ -57,7 +57,7 @@ df = pd.read_csv(ds.input('input_file.csv'))
 df.to_csv(ds.output('output_file.csv'))
 
 # Record a summary statistic about how well your job went
-ds.set_summary('f-score', f_score)
+ds.summary('f-score', f_score)
 
 ds.publish('Did some awesome data science!')
 ```
@@ -237,7 +237,7 @@ import dotscience as ds
 
 print('Fit: %f%%' % (ds.summary('fit%', fit),))
 
-ds.set_summary('fit%', fit)
+ds.summary('fit%', fit)
 
 ds.set_summaries(fit=computeFit(), error=computeMeanError())
 
