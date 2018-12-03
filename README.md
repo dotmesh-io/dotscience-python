@@ -57,7 +57,7 @@ df = pd.read_csv(ds.input('input_file.csv'))
 df.to_csv(ds.output('output_file.csv'))
 
 # Record a summary statistic about how well your job went
-ds.summary('f-score', f_score)
+ds.add_summary('f-score', f_score)
 
 ds.publish('Did some awesome data science!')
 ```
@@ -219,9 +219,9 @@ import dotscience as ds
 
 some_library.set_mode(ds.label("some_library_mode", foo))
 
-ds.set_label("algorithm_version","1.3")
+ds.add_label("algorithm_version","1.3")
 
-ds.set_labels(experimental=True, mode="test")
+ds.add_labels(experimental=True, mode="test")
 
 ds.publish('Did some awesome data science!')
 ```
@@ -237,9 +237,9 @@ import dotscience as ds
 
 print('Fit: %f%%' % (ds.summary('fit%', fit),))
 
-ds.summary('fit%', fit)
+ds.add_summary('fit%', fit)
 
-ds.set_summaries(fit=computeFit(), error=computeMeanError())
+ds.add_summaries(fit=computeFit(), error=computeMeanError())
 
 ds.publish('Did some awesome data science!')
 ```
@@ -255,9 +255,9 @@ import dotscience as ds
 
 some_library.set_smoothing(ds.parameter("smoothing", 2.0))
 
-ds.set_parameter("outlier_threshold",1.3)
+ds.add_parameter("outlier_threshold",1.3)
 
-ds.set_parameters(prefilter=True, smooth=True, smoothing_factor=12)
+ds.add_parameters(prefilter=True, smooth=True, smoothing_factor=12)
 
 ds.publish('Did some awesome data science!')
 ```
