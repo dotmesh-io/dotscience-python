@@ -10,8 +10,8 @@ class Run:
         self._id = None
         self._error = None
         self._description = None
-        self._inputs = []
-        self._outputs = []
+        self._inputs = set()
+        self._outputs = set()
         self._labels = {}
         self._summary = {}
         self._parameters = {}
@@ -45,7 +45,7 @@ class Run:
 
     def add_input(self, filename):
         ## FIXME: Canonicalise filename
-        self._inputs.append(str(filename))
+        self._inputs.add(str(filename))
 
     def add_inputs(self, *args):
         for filename in args:
@@ -57,7 +57,7 @@ class Run:
 
     def add_output(self, filename):
         ## FIXME: Canonicalise filename
-        self._outputs.append(str(filename))
+        self._outputs.add(str(filename))
 
     def add_outputs(self, *args):
         for filename in args:
@@ -118,8 +118,8 @@ class Run:
     def metadata(self):
         r = {
             "version": "1",
-            "input": self._inputs,
-            "output": self._outputs,
+            "input": list(self._inputs),
+            "output": list(self._outputs),
             "labels": self._labels,
             "summary": self._summary,
             "parameters": self._parameters
