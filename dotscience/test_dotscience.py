@@ -52,32 +52,18 @@ def test_run_input_1(x):
                         "labels": {}
     }, sort_keys=True, indent=4), r._id)
 
-@given(text(), text())
-def test_run_input_2(x, y):
+@given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
+def test_run_input_2(x):
     r = dotscience.Run()
-    r.add_input(x)
-    r.add_input(y)
-    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
-    (r._id, json.dumps({"version": "1",
-                        "summary": {},
-                        "parameters": {},
-                        "output": [],
-                        "input": [x,y],
-                        "labels": {}
-    }, sort_keys=True, indent=4), r._id)
+    r.add_input(x[0])
+    r.add_input(x[1])
+    len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
 
-@given(lists(text()))
+@given(lists(text(min_size=1), unique=True))
 def test_run_input_n(x):
     r = dotscience.Run()
     r.add_inputs(*x)
-    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
-    (r._id, json.dumps({"version": "1",
-                        "summary": {},
-                        "parameters": {},
-                        "output": [],
-                        "input": x,
-                        "labels": {}
-    }, sort_keys=True, indent=4), r._id)
+    len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
 
 @given(text())
 def test_run_output_1(x):
@@ -92,32 +78,18 @@ def test_run_output_1(x):
                         "labels": {}
     }, sort_keys=True, indent=4), r._id)
 
-@given(text(), text())
-def test_run_output_2(x, y):
+@given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
+def test_run_output_2(data):
     r = dotscience.Run()
-    r.add_output(x)
-    r.add_output(y)
-    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
-    (r._id, json.dumps({"version": "1",
-                        "summary": {},
-                        "parameters": {},
-                        "input": [],
-                        "output": [x,y],
-                        "labels": {}
-    }, sort_keys=True, indent=4), r._id)
+    r.add_output(data[0])
+    r.add_output(data[1])
+    len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
 
-@given(lists(text()))
-def test_run_output_n(x):
+@given(lists(text(min_size=1), unique=True))
+def test_run_output_n(data):
     r = dotscience.Run()
-    r.add_outputs(*x)
-    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
-    (r._id, json.dumps({"version": "1",
-                        "summary": {},
-                        "parameters": {},
-                        "input": [],
-                        "output": x,
-                        "labels": {}
-    }, sort_keys=True, indent=4), r._id)
+    r.add_outputs(*data)
+    len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
 
 @given(text())
 def test_run_labels_1(x):
@@ -407,13 +379,13 @@ def test_input_1b(d):
     assert m["parameters"] == {}
     assert m["summary"] == {}
 
-@given(lists(text()))
+@given(lists(text(min_size=1), unique=True))
 def test_input_n(d):
     s=io.StringIO()
     dotscience.add_inputs(*d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["input"] == d
+    assert len(m["input"]) == len(d) and sorted(m["input"]) == sorted(d)
     assert m["output"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -443,13 +415,13 @@ def test_output_1b(d):
     assert m["parameters"] == {}
     assert m["summary"] == {}
 
-@given(lists(text()))
+@given(lists(text(min_size=1), unique=True))
 def test_output_n(d):
     s=io.StringIO()
     dotscience.add_outputs(*d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["output"] == d
+    assert len(m["output"]) == len(d) and sorted(m["output"]) == sorted(d)
     assert m["input"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
