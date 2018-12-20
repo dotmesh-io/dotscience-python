@@ -2,6 +2,7 @@ FROM python:3
 
 RUN apt-get update && apt-get install git
 RUN mkdir dsbuild
+COPY .git ./dsbuild/.git
 COPY .gitattributes ./dsbuild
 COPY dotscience ./dsbuild/dotscience
 COPY setup.py ./dsbuild
