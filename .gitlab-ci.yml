@@ -43,4 +43,5 @@ deploy_pypi:
     - fast
   script:
     - ./shipit-pypi.sh -u $PYPI_USER -p $PYPI_PASSWORD
-  when: manual
+  only:
+    - tags
