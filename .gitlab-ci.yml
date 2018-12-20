@@ -43,5 +43,6 @@ deploy_pypi:
     - fast
   script:
     - ./shipit-pypi.sh -u $PYPI_USER -p $PYPI_PASSWORD
+    - curl -X POST -F "token=$CI_JOB_TOKEN" -F "ref=master" -F "variables[DOTSCIENCE_TAG]=$CI_BUILD_REF" https://gitlab.dotmesh.com/api/v4/projects/dotmesh%2Fjupyterlab-tensorflow-sync/trigger/pipeline
   only:
     - tags
