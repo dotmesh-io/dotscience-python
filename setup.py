@@ -1,13 +1,11 @@
 import setuptools
-import versioneer
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="dotscience",
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version="0.0.1",
     author="Subtree, Inc",
     author_email="support@dotscience.com",
     description="Tools for writing Dotscience workloads",
