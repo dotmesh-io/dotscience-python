@@ -45,7 +45,10 @@ class Run:
 
     def add_input(self, filename):
         ## FIXME: Canonicalise filename
-        self._inputs.add(str(filename))
+        filename_str = str(filename)
+        if filename_str.startswith("./"):
+            filename_str = filename_str[2:]
+        self._inputs.add(filename_str)
 
     def add_inputs(self, *args):
         for filename in args:
@@ -57,7 +60,10 @@ class Run:
 
     def add_output(self, filename):
         ## FIXME: Canonicalise filename
-        self._outputs.add(str(filename))
+        filename_str = str(filename)
+        if filename_str.startswith("./"):
+            filename_str = filename_str[2:]
+        self._outputs.add(filename_str)
 
     def add_outputs(self, *args):
         for filename in args:
