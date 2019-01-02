@@ -8,6 +8,8 @@ import io
 from hypothesis import given, assume, note
 from hypothesis.strategies import text, lists
 
+TEST_WORKLOAD_FILE = "/dsbuild/dotscience/__init__.py"
+
 ###
 ### Test the Run class
 ###
@@ -20,8 +22,9 @@ def test_run_null():
     "output": [],
     "parameters": {},
     "summary": {},
-    "version": "1"
-}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, r._id)
+    "version": "1",
+    "workload-file": "%s"
+}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, TEST_WORKLOAD_FILE, r._id)
 
 @given(text(),text())
 def test_run_basics(error, description):
@@ -36,8 +39,9 @@ def test_run_basics(error, description):
     "output": [],
     "parameters": {},
     "summary": {},
-    "version": "1"
-}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, json.dumps(description), json.dumps(error), r._id)
+    "version": "1",
+    "workload-file": "%s"
+}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, json.dumps(description), json.dumps(error), TEST_WORKLOAD_FILE, r._id)
 
 @given(text())
 def test_run_input_1(x):
@@ -49,7 +53,8 @@ def test_run_input_1(x):
                         "parameters": {},
                         "output": [],
                         "input": [x],
-                        "labels": {}
+                        "labels": {},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
@@ -75,7 +80,8 @@ def test_run_output_1(x):
                         "parameters": {},
                         "input": [],
                         "output": [x],
-                        "labels": {}
+                        "labels": {},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
@@ -101,7 +107,8 @@ def test_run_labels_1(x):
                         "parameters": {},
                         "input": [],
                         "output": [],
-                        "labels": {"food": x}
+                        "labels": {"food": x},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text(),text(),text(),text())
@@ -116,7 +123,8 @@ def test_run_labels_multi(a,b,c,d):
                         "parameters": {},
                         "input": [],
                         "output": [],
-                        "labels": {"a": a, "b": b, "c": c, "d": d}
+                        "labels": {"a": a, "b": b, "c": c, "d": d},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text())
@@ -129,7 +137,8 @@ def test_run_summary_1(x):
                         "parameters": {},
                         "input": [],
                         "output": [],
-                        "summary": {"food": x}
+                        "summary": {"food": x},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text(),text(),text(),text())
@@ -144,7 +153,8 @@ def test_run_summary_multi(a,b,c,d):
                         "parameters": {},
                         "input": [],
                         "output": [],
-                        "summary": {"a": a, "b": b, "c": c, "d": d}
+                        "summary": {"a": a, "b": b, "c": c, "d": d},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text())
@@ -157,7 +167,8 @@ def test_run_parameter_1(x):
                         "summary": {},
                         "input": [],
                         "output": [],
-                        "parameters": {"food": x}
+                        "parameters": {"food": x},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text(),text(),text(),text())
@@ -172,7 +183,8 @@ def test_run_parameter_multi(a,b,c,d):
                         "summary": {},
                         "input": [],
                         "output": [],
-                        "parameters": {"a": a, "b": b, "c": c, "d": d}
+                        "parameters": {"a": a, "b": b, "c": c, "d": d},
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_start_1():
@@ -185,7 +197,8 @@ def test_run_start_1():
                         "input": [],
                         "output": [],
                         "parameters": {},
-                        "start": r._start.strftime("%Y%m%dT%H%M%S.%f")
+                        "start": r._start.strftime("%Y%m%dT%H%M%S.%f"),
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_start_2():
@@ -202,7 +215,8 @@ def test_run_start_2():
                         "input": [],
                         "output": [],
                         "parameters": {},
-                        "start": r._start.strftime("%Y%m%dT%H%M%S.%f")
+                        "start": r._start.strftime("%Y%m%dT%H%M%S.%f"),
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_end_1():
@@ -215,7 +229,8 @@ def test_run_end_1():
                         "input": [],
                         "output": [],
                         "parameters": {},
-                        "end": r._end.strftime("%Y%m%dT%H%M%S.%f")
+                        "end": r._end.strftime("%Y%m%dT%H%M%S.%f"),
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_end_2():
@@ -232,7 +247,8 @@ def test_run_end_2():
                         "input": [],
                         "output": [],
                         "parameters": {},
-                        "end": time1.strftime("%Y%m%dT%H%M%S.%f")
+                        "end": time1.strftime("%Y%m%dT%H%M%S.%f"),
+                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 ###
@@ -260,6 +276,7 @@ def test_null():
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 def test_auto_start():
     s=io.StringIO()
@@ -272,6 +289,7 @@ def test_auto_start():
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 # How to test auto_end? The currentRun object is reset by publish() so we have no way to get the value. Parse it back and confirm it's between a saved dotscience._defaultDS.currentRun._start and now?
 
@@ -290,6 +308,7 @@ def test_start_end():
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_description_a(d):
@@ -302,6 +321,7 @@ def test_description_a(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_description_b(d):
@@ -315,6 +335,7 @@ def test_description_b(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_description_c(d):
@@ -328,6 +349,7 @@ def test_description_c(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_error_a(d):
@@ -341,6 +363,7 @@ def test_error_a(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_error_b(d):
@@ -354,6 +377,7 @@ def test_error_b(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_input_1a(d):
@@ -366,6 +390,7 @@ def test_input_1a(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_input_1b(d):
@@ -378,6 +403,7 @@ def test_input_1b(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(lists(text(min_size=1), unique=True))
 def test_input_n(d):
@@ -390,6 +416,7 @@ def test_input_n(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_output_1a(d):
@@ -402,6 +429,7 @@ def test_output_1a(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_output_1b(d):
@@ -414,6 +442,7 @@ def test_output_1b(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(lists(text(min_size=1), unique=True))
 def test_output_n(d):
@@ -426,6 +455,7 @@ def test_output_n(d):
     assert m["labels"] == {}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_label_1a(d):
@@ -438,6 +468,7 @@ def test_label_1a(d):
     assert m["labels"] == {"test": d}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_label_1b(d):
@@ -450,6 +481,7 @@ def test_label_1b(d):
     assert m["labels"] == {"test": d}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text(),text())
 def test_label_n(a, b):
@@ -463,6 +495,7 @@ def test_label_n(a, b):
     assert m["labels"] == {"a": a, "b": b}
     assert m["parameters"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_summary_1a(d):
@@ -475,6 +508,7 @@ def test_summary_1a(d):
     assert m["summary"] == {"test": d}
     assert m["parameters"] == {}
     assert m["labels"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_summary_1b(d):
@@ -487,6 +521,7 @@ def test_summary_1b(d):
     assert m["summary"] == {"test": d}
     assert m["parameters"] == {}
     assert m["labels"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text(),text())
 def test_summary_n(a, b):
@@ -500,6 +535,7 @@ def test_summary_n(a, b):
     assert m["summary"] == {"a": a, "b": b}
     assert m["parameters"] == {}
     assert m["labels"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_parameter_1a(d):
@@ -512,6 +548,7 @@ def test_parameter_1a(d):
     assert m["parameters"] == {"test": d}
     assert m["labels"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text())
 def test_parameter_1b(d):
@@ -524,6 +561,7 @@ def test_parameter_1b(d):
     assert m["parameters"] == {"test": d}
     assert m["labels"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 @given(text(),text())
 def test_parameter_n(a, b):
@@ -537,6 +575,7 @@ def test_parameter_n(a, b):
     assert m["parameters"] == {"a": a, "b": b}
     assert m["labels"] == {}
     assert m["summary"] == {}
+    assert m["workload-file"] == TEST_WORKLOAD_FILE
 
 def test_multi_publish():
     s1=io.StringIO()

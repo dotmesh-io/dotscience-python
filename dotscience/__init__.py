@@ -4,6 +4,7 @@ import json
 import datetime
 import uuid
 import sys
+import os
 
 class Run:
     def __init__(self):
@@ -17,6 +18,13 @@ class Run:
         self._parameters = {}
         self._start = None
         self._end = None
+
+        # Capture script filename if and only if it is available
+        # (it isn't in Jupyter)
+        try:
+            self._workload_file = os.path.normpath(__file__)
+        except:
+            self._workload_file = None
 
     def start(self):
         # Subsequent start()s overwrite, as the system does one at the
@@ -142,6 +150,9 @@ class Run:
 
         if self._end != None:
             r["end"] = self._end.strftime("%Y%m%dT%H%M%S.%f")
+
+        if self._workload_file != None:
+            r["workload-file"] = self._workload_file
 
         return r
 
