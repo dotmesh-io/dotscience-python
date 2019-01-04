@@ -40,7 +40,11 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ### Use the ready-made Jupyter image
 
-Coming soon!
+The default Dotscience Jupyter images all have the latest version of the Dotscience python library bundled as standard, so you can just use it in your notebooks:
+
+```python
+import dotscience as ds
+```
 
 ## Quick Start
 
@@ -49,6 +53,8 @@ The most basic usage is to record what data files you read and write, and maybe 
 ```python
 import dotscience as ds
 import pandas as pd
+
+ds.interactive()
 
 # Wrap the names of files you read with ds.input() - it just returns the filename:
 df = pd.read_csv(ds.input('input_file.csv'))
@@ -62,7 +68,15 @@ ds.add_summary('f-score', f_score)
 ds.publish('Did some awesome data science!')
 ```
 
-Don't forget to call `ds.publish()` at the end, or your results won't get published! (The run description string passed in is optional, so leave it out if you can't think of anything nice to say).
+Don't forget to call `ds.interactive()` at the top if you're using Jupyter, and `ds.publish()` at the end, or your results won't get published! (The run description string passed in is optional, so leave it out if you can't think of anything nice to say).
+
+## Interactive vs. Script mode
+
+The library has two modes - interactive and script. That call to `ds.interactive()` in the example above puts it in interactive mode, which tells it there isn't a script file that the code is coming from. But when you're writing code in a Python script file, you should call `ds.script()` instead.
+
+This instructs the library to record the script filename (from `sys.argv[0]`) in the output runs, so they can be tracked back to the originating script. You don't need this in interactive mode, because Dotscience knows which Jupyter notebook you're using - and `sys.argv[0]` points to the Jupyter Python kernel in that case, which isn't useful to record in the run!
+
+If `sys.argv[0]` isn't helpful in some other situation, you can call `ds.script('FILENAME')` to specify the script file, relative to the current working directory. In fact, in a Jupyter notebook, you could specify `ds.script('my-notebook.ipynb')` to manually specify the notebook file and override the automatic recording of the notebook file, but there wouldn't be any point!
 
 ## All the things you can record
 

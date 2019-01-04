@@ -4,11 +4,11 @@ import json
 import datetime
 import re
 import io
+import os
+import sys
 
 from hypothesis import given, assume, note
 from hypothesis.strategies import text, lists
-
-TEST_WORKLOAD_FILE = "/dsbuild/dotscience/__init__.py"
 
 ###
 ### Test the Run class
@@ -22,13 +22,13 @@ def test_run_null():
     "output": [],
     "parameters": {},
     "summary": {},
-    "version": "1",
-    "workload-file": "%s"
-}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, TEST_WORKLOAD_FILE, r._id)
+    "version": "1"
+}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, r._id)
 
 @given(text(),text())
 def test_run_basics(error, description):
     r = dotscience.Run()
+    r._set_workload_file('nonsense.py')
     assert r.error(error) == error
     assert r.description(description) == description
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]{
@@ -40,8 +40,8 @@ def test_run_basics(error, description):
     "parameters": {},
     "summary": {},
     "version": "1",
-    "workload-file": "%s"
-}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, json.dumps(description), json.dumps(error), TEST_WORKLOAD_FILE, r._id)
+    "workload-file": "nonsense.py"
+}[[/DOTSCIENCE-RUN:%s]]""" % (r._id, json.dumps(description), json.dumps(error), r._id)
 
 @given(text())
 def test_run_input_1(x):
@@ -52,9 +52,8 @@ def test_run_input_1(x):
                         "summary": {},
                         "parameters": {},
                         "output": [],
-                        "input": [x],
+                        "input": [os.path.normpath(x)],
                         "labels": {},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
@@ -62,10 +61,12 @@ def test_run_input_2(x):
     r = dotscience.Run()
     r.add_input(x[0])
     r.add_input(x[1])
+    x = set([os.path.normpath(y) for y in x])
     len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
 
 @given(lists(text(min_size=1), unique=True))
 def test_run_input_n(x):
+    x = set([os.path.normpath(y) for y in x])
     r = dotscience.Run()
     r.add_inputs(*x)
     len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
@@ -79,9 +80,8 @@ def test_run_output_1(x):
                         "summary": {},
                         "parameters": {},
                         "input": [],
-                        "output": [x],
+                        "output": [os.path.normpath(x)],
                         "labels": {},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
@@ -89,10 +89,12 @@ def test_run_output_2(data):
     r = dotscience.Run()
     r.add_output(data[0])
     r.add_output(data[1])
+    data = set([os.path.normpath(x) for x in data])
     len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
 
 @given(lists(text(min_size=1), unique=True))
 def test_run_output_n(data):
+    data = set([os.path.normpath(x) for x in data])
     r = dotscience.Run()
     r.add_outputs(*data)
     len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
@@ -108,7 +110,6 @@ def test_run_labels_1(x):
                         "input": [],
                         "output": [],
                         "labels": {"food": x},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text(),text(),text(),text())
@@ -124,7 +125,6 @@ def test_run_labels_multi(a,b,c,d):
                         "input": [],
                         "output": [],
                         "labels": {"a": a, "b": b, "c": c, "d": d},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text())
@@ -138,7 +138,6 @@ def test_run_summary_1(x):
                         "input": [],
                         "output": [],
                         "summary": {"food": x},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text(),text(),text(),text())
@@ -154,7 +153,6 @@ def test_run_summary_multi(a,b,c,d):
                         "input": [],
                         "output": [],
                         "summary": {"a": a, "b": b, "c": c, "d": d},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text())
@@ -168,7 +166,6 @@ def test_run_parameter_1(x):
                         "input": [],
                         "output": [],
                         "parameters": {"food": x},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 @given(text(),text(),text(),text())
@@ -184,7 +181,6 @@ def test_run_parameter_multi(a,b,c,d):
                         "input": [],
                         "output": [],
                         "parameters": {"a": a, "b": b, "c": c, "d": d},
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_start_1():
@@ -198,7 +194,6 @@ def test_run_start_1():
                         "output": [],
                         "parameters": {},
                         "start": r._start.strftime("%Y%m%dT%H%M%S.%f"),
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_start_2():
@@ -216,7 +211,6 @@ def test_run_start_2():
                         "output": [],
                         "parameters": {},
                         "start": r._start.strftime("%Y%m%dT%H%M%S.%f"),
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_end_1():
@@ -230,7 +224,6 @@ def test_run_end_1():
                         "output": [],
                         "parameters": {},
                         "end": r._end.strftime("%Y%m%dT%H%M%S.%f"),
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_end_2():
@@ -248,11 +241,10 @@ def test_run_end_2():
                         "output": [],
                         "parameters": {},
                         "end": time1.strftime("%Y%m%dT%H%M%S.%f"),
-                        "workload-file": TEST_WORKLOAD_FILE
     }, sort_keys=True, indent=4), r._id)
 
 ###
-### Test the module-level methods, indirectly testing the Dotscience class
+### Utils for testing output JSON
 ###
 
 METADATA_RE = re.compile(r"\[\[DOTSCIENCE-RUN:(.+)\]\](.*)\[\[/DOTSCIENCE-RUN:\1\]\]", re.MULTILINE + re.DOTALL)
@@ -266,6 +258,89 @@ def _parse(metadata):
     # Capture the run ID
     meta["__ID"] = m.group(1)
     return meta
+
+TEST_WORKLOAD_FILE = "made_up_test_script.py"
+
+###
+### Test the interactive/script mode switching in the Dotscience class
+###
+
+def test_no_mode():
+    ds = dotscience.Dotscience()
+    try:
+        ds.publish()
+    except RuntimeError:
+        return True
+    else:
+        assert 'Did not get a RuntimeError when attempting to publish without choosing a mode'
+
+def test_conflicting_mode_1():
+    ds = dotscience.Dotscience()
+    try:
+        ds.interactive()
+        ds.script()
+    except RuntimeError:
+        return True
+    else:
+        assert 'Did not get a RuntimeError when attempting to conflict modes'
+
+def test_conflicting_mode_2():
+    ds = dotscience.Dotscience()
+    try:
+        ds.script()
+        ds.interactive()
+    except RuntimeError:
+        return True
+    else:
+        assert 'Did not get a RuntimeError when attempting to conflict modes'
+
+def test_non_conflicting_mode_1():
+    ds = dotscience.Dotscience()
+    ds.script()
+    ds.script()
+    ds.publish()
+
+def test_non_conflicting_mode_2():
+    ds = dotscience.Dotscience()
+    ds.interactive()
+    ds.interactive()
+    ds.publish()
+
+def test_no_script_name_when_interactive():
+    ds = dotscience.Dotscience()
+    ds.interactive()
+    s1=io.StringIO()
+    ds.publish("Hello", stream=s1)
+    m1 = _parse(s1.getvalue())
+
+    assert "workload-file" not in m1
+
+def test_default_script_name():
+    ds = dotscience.Dotscience()
+    ds.script()
+    s1=io.StringIO()
+    ds.publish("Hello", stream=s1)
+    m1 = _parse(s1.getvalue())
+
+    # This might be a fragile assertion...
+    assert m1["workload-file"] == "/usr/local/bin/pytest"
+
+def test_explicit_script_name():
+    ds = dotscience.Dotscience()
+    ds.script(TEST_WORKLOAD_FILE)
+    s1=io.StringIO()
+    ds.publish("Hello", stream=s1)
+    m1 = _parse(s1.getvalue())
+
+    assert m1["workload-file"] == TEST_WORKLOAD_FILE
+
+###
+### Test the module-level methods, indirectly testing the Dotscience class
+###
+
+# All these tests assume script mode
+
+dotscience.script(TEST_WORKLOAD_FILE)
 
 def test_null():
     s=io.StringIO()
@@ -385,7 +460,7 @@ def test_input_1a(d):
     dotscience.add_input(d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["input"] == [d]
+    assert m["input"] == [os.path.normpath(d)]
     assert m["output"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -398,7 +473,7 @@ def test_input_1b(d):
     assert dotscience.input(d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["input"] == [d]
+    assert m["input"] == [os.path.normpath(d)]
     assert m["output"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -407,6 +482,7 @@ def test_input_1b(d):
 
 @given(lists(text(min_size=1), unique=True))
 def test_input_n(d):
+    d = set([os.path.normpath(x) for x in d])
     s=io.StringIO()
     dotscience.add_inputs(*d)
     dotscience.publish(stream=s)
@@ -424,7 +500,7 @@ def test_output_1a(d):
     dotscience.add_output(d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["output"] == [d]
+    assert m["output"] == [os.path.normpath(d)]
     assert m["input"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -437,7 +513,7 @@ def test_output_1b(d):
     assert dotscience.output(d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["output"] == [d]
+    assert m["output"] == [os.path.normpath(d)]
     assert m["input"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -446,6 +522,7 @@ def test_output_1b(d):
 
 @given(lists(text(min_size=1), unique=True))
 def test_output_n(d):
+    d = set([os.path.normpath(x) for x in d])
     s=io.StringIO()
     dotscience.add_outputs(*d)
     dotscience.publish(stream=s)

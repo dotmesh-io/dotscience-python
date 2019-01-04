@@ -18,13 +18,11 @@ class Run:
         self._parameters = {}
         self._start = None
         self._end = None
+        self._workload_file = None
+        self._mode = None
 
-        # Capture script filename if and only if it is available
-        # (it isn't in Jupyter)
-        try:
-            self._workload_file = os.path.normpath(__file__)
-        except:
-            self._workload_file = None
+    def _set_workload_file(self, workload_file):
+        self._workload_file = workload_file
 
     def start(self):
         # Subsequent start()s overwrite, as the system does one at the
@@ -52,10 +50,7 @@ class Run:
         return description
 
     def add_input(self, filename):
-        ## FIXME: Canonicalise filename
-        filename_str = str(filename)
-        if filename_str.startswith("./"):
-            filename_str = filename_str[2:]
+        filename_str = os.path.normpath(str(filename))
         self._inputs.add(filename_str)
 
     def add_inputs(self, *args):
@@ -67,10 +62,7 @@ class Run:
         return filename
 
     def add_output(self, filename):
-        ## FIXME: Canonicalise filename
-        filename_str = str(filename)
-        if filename_str.startswith("./"):
-            filename_str = filename_str[2:]
+        filename_str = os.path.normpath(str(filename))
         self._outputs.add(filename_str)
 
     def add_outputs(self, *args):
@@ -173,17 +165,41 @@ class Dotscience:
 
     def __init__(self):
         self._startRun()
+        self._mode = None
+        self._workload_file = None
+
+    def interactive(self):
+        if self._mode == None or self._mode == "interactive":
+            self._mode = "interactive"
+            self._workload_file = None
+        else:
+            raise RuntimeError('An attempt was mode to select interactive mode for the Dotscience Python Library when it was in %s mode' % (self._mode,))
+
+    def script(self, script_path = None):
+        if self._mode == None or self._mode == "script":
+            self._mode = "script"
+            if script_path == None:
+                self._workload_file = os.path.normpath(sys.argv[0])
+            else:
+                self._workload_file = script_path
+        else:
+            raise RuntimeError('An attempt was mode to select script mode for the Dotscience Python Library when it was in %s mode' % (self._mode,))
 
     def _startRun(self):
         self.currentRun = Run()
         self.currentRun.start()
 
     def publish(self, description = None, stream = sys.stdout):
+        if self._mode == None:
+            raise RuntimeError('To use the Dotscience Python Library, you need to select interactive or script mode with the interactive() or script() functions.')
+
         # end() will set the end timestamp, if the user hasn't already
         # done so manually
         self.currentRun.end()
         if description != None:
             self.currentRun.set_description(description)
+
+        self.currentRun._set_workload_file(self._workload_file)
 
         stream.write(str(self.currentRun) + "\n")
         self._startRun()
@@ -260,6 +276,12 @@ class Dotscience:
 _defaultDS = Dotscience()
 
 # Proxy things through to the default Dotscience
+
+def interactive():
+    _defaultDS.interactive()
+
+def script(workload_file = None):
+    _defaultDS.script(workload_file)
 
 def publish(description = None, stream = sys.stdout):
     _defaultDS.publish(description, stream)
