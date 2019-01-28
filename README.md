@@ -3,13 +3,16 @@
 Hi! Welcome to the python library for helping you instrument your
 [Dotscience](https://www.dotscience.com/) workloads.
 
-Instrumenting your workloads means making them output metadata about
-what they're doing - which Dotscience can collect and use to make your
-life easier!
-
 ## Installation
 
-You can get the Dotscience python library in one of three ways.
+You can get the Dotscience Python library in one of three ways.
+
+
+### Use the Dotscience Jupyterlab environment
+
+If you are using Dotscience in a Jupyter notebook via the web interface, the Python library is already installed (its installed in the container that you are executing in, on your runner). So, no need to install anything: just `import dotscience as ds` in your notebook.
+
+If you are using Dotscience for a script other than a Jupyter notebook, use one of the following installation methods:
 
 ### Use the ready-made Docker image
 
@@ -36,14 +39,6 @@ Python 3.7.0 (default, Sep  5 2018, 03:25:31)
 [GCC 6.3.0 20170516] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import dotscience as ds
-```
-
-### Use the ready-made Jupyter image
-
-The default Dotscience Jupyter images all have the latest version of the Dotscience python library bundled as standard, so you can just use it in your notebooks:
-
-```python
-import dotscience as ds
 ```
 
 ## Quick Start
