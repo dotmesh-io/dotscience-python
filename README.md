@@ -6,9 +6,9 @@ You can get the Dotscience Python library in one of three ways.
 
 ### Use the Dotscience Jupyterlab environment
 
-If you are using Dotscience in a Jupyter notebook via the web interface, the Python library is already installed (its installed in the container that you are executing in, on your runner). So, no need to install anything: just `import dotscience as ds` in your notebook.
+If you are using Dotscience in a Jupyter notebook via the Dotscience web interface, the Python library is already installed (it's installed in the container that you are executing in, on your runner). In this case, there is no need to install anything: just `import dotscience as ds` in your notebook.
 
-If you are using Dotscience for a script other than a Jupyter notebook, use one of the following installation methods:
+If you are using Dotscience to track a model whose source code is a script other than a Jupyter notebook, use one of the following installation methods:
 
 ### Use the ready-made Docker image
 
