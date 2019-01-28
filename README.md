@@ -1,7 +1,3 @@
-# dotscience-python
-
-Hi! Welcome to the python library for helping you instrument your
-[Dotscience](https://www.dotscience.com/) workloads.
 
 ## Installation
 
