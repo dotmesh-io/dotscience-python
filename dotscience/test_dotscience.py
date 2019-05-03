@@ -199,19 +199,12 @@ def test_run_start_1():
 def test_run_start_2():
     r = dotscience.Run()
     r.start()
-    time1 = r._start
-    r.start()
-    # Assume clock has enough resolution that the two calls to start() don't get the same timestamp anyway
-    assume(time1 != r._start)
-    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
-    (r._id, json.dumps({"version": "1",
-                        "labels": {},
-                        "summary": {},
-                        "input": [],
-                        "output": [],
-                        "parameters": {},
-                        "start": r._start.strftime("%Y%m%dT%H%M%S.%f"),
-    }, sort_keys=True, indent=4), r._id)
+    try:
+        r.start()
+    except RuntimeError:
+        return True
+    else:
+        assert 'Did not get a RuntimeError when attempting to start a run twice'
 
 def test_run_end_1():
     r = dotscience.Run()
@@ -344,21 +337,9 @@ dotscience.script(TEST_WORKLOAD_FILE)
 
 def test_null():
     s=io.StringIO()
+    dotscience.start()
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["input"] == []
-    assert m["output"] == []
-    assert m["labels"] == {}
-    assert m["parameters"] == {}
-    assert m["summary"] == {}
-    assert m["workload-file"] == TEST_WORKLOAD_FILE
-
-def test_auto_start():
-    s=io.StringIO()
-    t = dotscience._defaultDS.currentRun._start
-    dotscience.publish(stream=s)
-    m = _parse(s.getvalue())
-    assert m["start"] == t.strftime("%Y%m%dT%H%M%S.%f")
     assert m["input"] == []
     assert m["output"] == []
     assert m["labels"] == {}
@@ -388,6 +369,7 @@ def test_start_end():
 @given(text())
 def test_description_a(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.publish(stream=s, description=d)
     m = _parse(s.getvalue())
     assert m["description"] == d
@@ -401,6 +383,7 @@ def test_description_a(d):
 @given(text())
 def test_description_b(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.set_description(d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -415,6 +398,7 @@ def test_description_b(d):
 @given(text())
 def test_description_c(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.description(d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -429,6 +413,7 @@ def test_description_c(d):
 @given(text())
 def test_error_a(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.error(d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -443,6 +428,7 @@ def test_error_a(d):
 @given(text())
 def test_error_b(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.set_error(d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -457,6 +443,7 @@ def test_error_b(d):
 @given(text())
 def test_input_1a(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_input(d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -470,6 +457,7 @@ def test_input_1a(d):
 @given(text())
 def test_input_1b(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.input(d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -484,6 +472,7 @@ def test_input_1b(d):
 def test_input_n(d):
     d = set([os.path.normpath(x) for x in d])
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_inputs(*d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -497,6 +486,7 @@ def test_input_n(d):
 @given(text())
 def test_output_1a(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_output(d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -510,6 +500,7 @@ def test_output_1a(d):
 @given(text())
 def test_output_1b(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.output(d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -524,6 +515,7 @@ def test_output_1b(d):
 def test_output_n(d):
     d = set([os.path.normpath(x) for x in d])
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_outputs(*d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -537,6 +529,7 @@ def test_output_n(d):
 @given(text())
 def test_label_1a(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_label("test", d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -550,6 +543,7 @@ def test_label_1a(d):
 @given(text())
 def test_label_1b(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.label("test", d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -563,6 +557,7 @@ def test_label_1b(d):
 @given(text(),text())
 def test_label_n(a, b):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_labels("a", a)
     dotscience.add_labels(b=b)
     dotscience.publish(stream=s)
@@ -577,6 +572,7 @@ def test_label_n(a, b):
 @given(text())
 def test_summary_1a(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_summary("test", d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -590,6 +586,7 @@ def test_summary_1a(d):
 @given(text())
 def test_summary_1b(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.summary("test", d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -603,6 +600,7 @@ def test_summary_1b(d):
 @given(text(),text())
 def test_summary_n(a, b):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_summaries("a", a)
     dotscience.add_summaries(b=b)
     dotscience.publish(stream=s)
@@ -617,6 +615,7 @@ def test_summary_n(a, b):
 @given(text())
 def test_parameter_1a(d):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_parameter("test", d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -630,6 +629,7 @@ def test_parameter_1a(d):
 @given(text())
 def test_parameter_1b(d):
     s=io.StringIO()
+    dotscience.start()
     assert dotscience.parameter("test", d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -643,6 +643,7 @@ def test_parameter_1b(d):
 @given(text(),text())
 def test_parameter_n(a, b):
     s=io.StringIO()
+    dotscience.start()
     dotscience.add_parameters("a", a)
     dotscience.add_parameters(b=b)
     dotscience.publish(stream=s)
@@ -654,10 +655,27 @@ def test_parameter_n(a, b):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-def test_multi_publish():
+def test_multi_publish_1():
     s1=io.StringIO()
+    dotscience.start()
     dotscience.publish("Hello", stream=s1)
     s2=io.StringIO()
+    dotscience.publish("World", stream=s2)
+    m1 = _parse(s1.getvalue())
+    m2 = _parse(s2.getvalue())
+
+    assert m1["description"] == "Hello"
+    assert m2["description"] == "World"
+    assert m1["__ID"] == m2["__ID"]
+    assert m1["start"] == m2["start"]
+    assert m1["end"] == m2["end"]
+
+def test_multi_publish_2():
+    s1=io.StringIO()
+    dotscience.start()
+    dotscience.publish("Hello", stream=s1)
+    s2=io.StringIO()
+    dotscience.start()
     dotscience.publish("World", stream=s2)
     m1 = _parse(s1.getvalue())
     m2 = _parse(s2.getvalue())

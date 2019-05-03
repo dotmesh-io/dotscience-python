@@ -25,9 +25,10 @@ class Run:
         self._workload_file = workload_file
 
     def start(self):
-        # Subsequent start()s overwrite, as the system does one at the
-        # start by default and users should be able to override it.
-        self._start = datetime.datetime.utcnow()
+        if self._start == None:
+            self._start = datetime.datetime.utcnow()
+        else:
+            raise RuntimeError('Run.start() has been called more than once')
 
     def end(self):
         # Only the first end() is kept, as the system does one at the
@@ -164,7 +165,6 @@ class Dotscience:
     currentRun = None
 
     def __init__(self):
-        self._startRun()
         self._mode = None
         self._workload_file = None
 
@@ -185,13 +185,15 @@ class Dotscience:
         else:
             raise RuntimeError('An attempt was mode to select script mode for the Dotscience Python Library when it was in %s mode' % (self._mode,))
 
-    def _startRun(self):
-        self.currentRun = Run()
-        self.currentRun.start()
+    def _check_started(self):
+        if self.currentRun == None:
+            print("You have not called ds.start() yet, so I'm doing it for you!")
+            self.start()
 
     def publish(self, description = None, stream = sys.stdout):
         if self._mode == None:
             raise RuntimeError('To use the Dotscience Python Library, you need to select interactive or script mode with the interactive() or script() functions.')
+        self._check_started()
 
         # end() will set the end timestamp, if the user hasn't already
         # done so manually
@@ -202,74 +204,97 @@ class Dotscience:
         self.currentRun._set_workload_file(self._workload_file)
 
         stream.write(str(self.currentRun) + "\n")
-        self._startRun()
 
     # Proxy things through to the current run
 
-    def start(self):
+    def start(self, description = None):
+        self.currentRun = Run()
         self.currentRun.start()
+        if description != None:
+            self.currentRun.set_description(description)
 
     def end(self):
+        self._check_started()
         self.currentRun.end()
 
     def set_error(self, error):
+        self._check_started()
         self.currentRun.set_error(error)
 
     def error(self, filename):
+        self._check_started()
         return self.currentRun.error(filename)
 
     def set_description(self, description):
+        self._check_started()
         self.currentRun.set_description(description)
 
     def description(self, filename):
+        self._check_started()
         return self.currentRun.description(filename)
 
     def add_input(self, filename):
+        self._check_started()
         self.currentRun.add_input(filename)
 
     def add_inputs(self, *args):
+        self._check_started()
         self.currentRun.add_inputs(*args)
 
     def input(self, filename):
+        self._check_started()
         return self.currentRun.input(filename)
 
     def add_output(self, filename):
+        self._check_started()
         self.currentRun.add_output(filename)
 
     def add_outputs(self, *args):
+        self._check_started()
         self.currentRun.add_outputs(*args)
 
     def output(self, filename):
+        self._check_started()
         return self.currentRun.output(filename)
 
     def add_label(self, label, value):
+        self._check_started()
         self.currentRun.add_label(label, value)
 
     def label(self, label, value):
+        self._check_started()
         return self.currentRun.label(label, value)
 
     def add_labels(self, *args, **kwargs):
+        self._check_started()
         self.currentRun.add_labels(*args, **kwargs)
 
     def add_summary(self, label, value):
+        self._check_started()
         self.currentRun.add_summary(label, value)
 
     def add_summaries(self, *args, **kwargs):
+        self._check_started()
         self.currentRun.add_summaries(*args, **kwargs)
 
     def summary(self, label, value):
+        self._check_started()
         return self.currentRun.summary(label, value)
 
     def add_parameter(self, label, value):
+        self._check_started()
         self.currentRun.add_parameter(label, value)
 
     def add_parameters(self, *args, **kwargs):
+        self._check_started()
         self.currentRun.add_parameters(*args, **kwargs)
 
     def parameter(self, label, value):
+        self._check_started()
         return self.currentRun.parameter(label, value)
 
     def debug(self):
+        self._check_started()
         self.currentRun.debug()
 
 # Default run start time is set HERE at module load time
@@ -286,8 +311,8 @@ def script(workload_file = None):
 def publish(description = None, stream = sys.stdout):
     _defaultDS.publish(description, stream)
 
-def start():
-    _defaultDS.start()
+def start(description = None):
+    _defaultDS.start(description)
 
 def end():
     _defaultDS.end()

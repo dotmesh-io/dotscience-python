@@ -47,6 +47,8 @@ import pandas as pd
 
 ds.interactive()
 
+ds.start()
+
 # Wrap the names of files you read with ds.input() - it just returns the filename:
 df = pd.read_csv(ds.input('input_file.csv'))
 
@@ -59,7 +61,7 @@ ds.add_summary('f-score', f_score)
 ds.publish('Did some awesome data science!')
 ```
 
-Don't forget to call `ds.interactive()` at the top if you're using Jupyter, and `ds.publish()` at the end, or your results won't get published! (The run description string passed in is optional, so leave it out if you can't think of anything nice to say).
+Don't forget to call `ds.interactive()` and `ds.start()` at the top if you're using Jupyter, and `ds.publish()` at the end, or your results won't get published! (The run description string passed in is optional, so leave it out if you can't think of anything nice to say).
 
 ## Interactive vs. Script mode
 
@@ -75,7 +77,7 @@ There's a lot more than just data files and summary stats that Dotscience will k
 
 ### Start and end time
 
-The library will try to guess when your job starts and ends, from when you load the `dotscience` module until you call `publish()` (although it gets a bit more complex with multiple runs; see below).
+The library will try to guess when your job starts and ends, from when you call `start()` until you call `publish()` (although it gets a bit more complex with multiple runs; see below).
 
 If you're running in Jupyter, that means it'll include the time you spend working on your notebook, thinking, and so on as well as the time actually spent running the steps, which probably isn't what you want. To get better tracking of the run times, to keep track of what operations are slow and to cross-reference the time periods against other stuff running on the same computers to see if the workloads are interfering, it's a good idea to explicitly tell Dotscience when your steps start and stop.
 
@@ -85,6 +87,8 @@ Just call `start()` and `end()` before and after the real work and the library w
 
 ```python
 import dotscience as ds
+
+ds.script()
 
 ...setup code...
 
@@ -104,6 +108,8 @@ or:
 ```python
 import dotscience as ds
 
+ds.script()
+
 ...setup code...
 
 ds.start()
@@ -122,6 +128,9 @@ Sometimes, a run fails, but you still want to record that it happened (perhaps s
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 ...
 ds.set_error('The data wasn't correctly formatted')
 ...
@@ -133,6 +142,9 @@ If you're assembling an error message to use for some other reason, the dotscien
 
 ```python
 import dotscience as ds
+
+ds.script()
+ds.start()
 
 ...
 raise DataFormatError(ds.error('The data wasn't correctly formatted'))
@@ -148,6 +160,9 @@ It's good to record a quick human-readable description of what your run did, whi
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 ds.publish('Did some awesome data science!')
 ```
 
@@ -156,6 +171,9 @@ But you can set up a description before then and just call `publish()` with no a
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 ...
 ds.set_description('Did some awesome data science!')
 ...
@@ -163,13 +181,29 @@ ds.set_description('Did some awesome data science!')
 ds.publish()
 ```
 
-And if you're already making a descriptive string to send somewhere else, you can also use this function, that returns its argument:
+If you're already making a descriptive string to send somewhere else, you can also use this function, that returns its argument:
 
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 ...
 log.write(ds.description('Did some awesome data science!'))
+...
+
+ds.publish()
+```
+
+And if you wish, you can also pass the description to `start()`, although it can feel weird using the past tense for something you're about to do:
+
+```python
+import dotscience as ds
+
+ds.script()
+ds.start('Did some awesome data science!')
+
 ...
 
 ds.publish()
@@ -184,6 +218,9 @@ The most convenient way to do this is with `input()` and `output()`, which accep
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 df.from_csv(ds.input('input_file.csv'))
 
 df.to_csv(ds.output('output_file.csv'))
@@ -196,6 +233,9 @@ But you can also declare them explicitly with `add_input()` and `add_output()`:
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 ds.add_input('input_file.csv')
 
 ds.add_output('output_file.csv')
@@ -207,6 +247,9 @@ Or declare several at once with `add_inputs()` and `add_outputs()`:
 
 ```python
 import dotscience as ds
+
+ds.script()
+ds.start()
 
 ds.add_inputs('input_file_1.csv', 'input_file_2.csv')
 
@@ -221,6 +264,9 @@ You can attach arbitrary labels to your runs, which can be used to search for th
 
 ```python
 import dotscience as ds
+
+ds.script()
+ds.start()
 
 some_library.set_mode(ds.label("some_library_mode", foo))
 
@@ -240,6 +286,9 @@ As usual, this can be done while returning the summary value with `summary()`, e
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 print('Fit: %f%%' % (ds.summary('fit%', fit),))
 
 ds.add_summary('fit%', fit)
@@ -258,6 +307,9 @@ As usual, this can be done while returning the parameter value with `parameter()
 ```python
 import dotscience as ds
 
+ds.script()
+ds.start()
+
 some_library.set_smoothing(ds.parameter("smoothing", 2.0))
 
 ds.add_parameter("outlier_threshold",1.3)
@@ -269,18 +321,22 @@ ds.publish('Did some awesome data science!')
 
 ## Multiple runs
 
-There's nothing to stop you from doing more than one "run" in one go; just call `publish()` at the end of each.
+There's nothing to stop you from doing more than one "run" in one go; just call `start()` at the beginning and `publish()` at the end of each.
 
 This might look like this:
 
 ```python
 import dotscience as ds
 
+ds.script()
+
+ds.start()
 data = load_csv(ds.input('training.csv'))
 model = train_model(data)
 model.save(ds.output('model.mdl'))
 ds.publish('Trained the model')
 
+ds.start()
 test_data = load_csv(ds.input('test.csv'))
 accuracy = test_model(model, test_data)
 ds.add_summary('accuracy', accuracy)
@@ -291,6 +347,8 @@ Or it might look like this:
 
 ```python
 import dotscience as ds
+
+ds.script()
 
 # Load the data, but don't report it to Dotscience (yet)
 data = load_csv('training.csv')
@@ -315,4 +373,4 @@ for smoothing in [1.0, 1.5, 2.0]:
     ds.publish('Tested the model with smoothing %s' % (smoothing,))
 ```
 
-In that example, we've loaded the data into memory once and re-used it in each run - so we've put in an explicit call to `start()` to record when the actual run starts; we could have put a call to `end()` just before `publish()`, but `publish()` assumes the run is ended when you publish it anyway. If you don't call `start()` and `end()` at all when there's multiple calls to `publish()`, Dotscience will try to be smart about guessing what the start and end times are - the first run will go from when the `dotscience` module is imported until the first `publish()`; then subsequent runs will be timed from the last `publish()` to the next.
+In that example, we've loaded the data into memory once and re-used it in each run - so we've done that before the call to `start()` to record when the actual run starts; we could have put a call to `end()` just before `publish()`, but `publish()` assumes the run is ended when you publish it anyway.
