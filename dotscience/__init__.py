@@ -149,11 +149,11 @@ class Run:
 
         return r
 
+    def newID(self):
+        self._id = str(uuid.uuid4())
+
     def __str__(self):
         jsonMetadata = json.dumps(self.metadata(), sort_keys=True, indent=4)
-
-        while self._id == None or jsonMetadata.find(self._id) != -1:
-            self._id = str(uuid.uuid4())
 
         return "[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]" % (self._id, jsonMetadata, self._id)
 
@@ -202,6 +202,12 @@ class Dotscience:
             self.currentRun.set_description(description)
 
         self.currentRun._set_workload_file(self._workload_file)
+
+        # Generate a new ID on every publish(), so you never get multiple runs
+        # with the same id but potentially different parameters ending up in
+        # metadata. That confuses the Dotscience UI very badly as it makes it
+        # impossible to distinguish different runs by ID.
+        self.currentRun.newID()
 
         stream.write(str(self.currentRun) + "\n")
 

@@ -666,7 +666,7 @@ def test_multi_publish_1():
 
     assert m1["description"] == "Hello"
     assert m2["description"] == "World"
-    assert m1["__ID"] == m2["__ID"]
+    assert m1["__ID"] != m2["__ID"]
     assert m1["start"] == m2["start"]
     assert m1["end"] == m2["end"]
 
