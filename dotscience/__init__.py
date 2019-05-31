@@ -30,6 +30,14 @@ class Run:
         else:
             raise RuntimeError('Run.start() has been called more than once')
 
+    def lazy_start(self):
+        if self._start == None:
+            self._start = datetime.datetime.utcnow()
+
+    def forget_times(self):
+        self._end = None
+        self._start = None
+
     def end(self):
         # Only the first end() is kept, as the system does one at the
         # end, but that shouldn't override one the user has done.
@@ -189,15 +197,22 @@ class Dotscience:
         if self.currentRun == None:
             print("You have not called ds.start() yet, so I'm doing it for you!")
             self.start()
+        # In case we got started implicitly after a publish, make sure we
+        # record the start time of the first thing after the publish
+        self.currentRun.lazy_start()
 
     def publish(self, description = None, stream = sys.stdout):
         if self._mode == None:
-            raise RuntimeError('To use the Dotscience Python Library, you need to select interactive or script mode with the interactive() or script() functions.')
+            raise RuntimeError(
+                'To use the Dotscience Python Library, you need to select interactive '
+                '(e.g. Jupyter) or script mode with the interactive() or script() functions.'
+            )
         self._check_started()
 
         # end() will set the end timestamp, if the user hasn't already
         # done so manually
         self.currentRun.end()
+
         if description != None:
             self.currentRun.set_description(description)
 
@@ -210,6 +225,16 @@ class Dotscience:
         self.currentRun.newID()
 
         stream.write(str(self.currentRun) + "\n")
+
+        # After publishing, reset the start and end time so that we don't end
+        # up with multiple runs with the same times (calling end() twice has no
+        # effect the second time otherwise). If the user doesn't explicitly
+        # call start(), it will get implicitly called after the next
+        # interaction with the python library anyway (e.g. ds.summary(), etc),
+        # via _check_started which does a lazy_start to cover resetting the
+        # start timer in this case.
+        self.currentRun.forget_times()
+
 
     # Proxy things through to the current run
 
