@@ -15,7 +15,7 @@ from hypothesis.strategies import text, lists
 ###
 
 def test_run_null():
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]{
     "input": [],
     "labels": {},
@@ -27,7 +27,7 @@ def test_run_null():
 
 @given(text(),text())
 def test_run_basics(error, description):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r._set_workload_file('nonsense.py')
     assert r.error(error) == error
     assert r.description(description) == description
@@ -45,63 +45,107 @@ def test_run_basics(error, description):
 
 @given(text())
 def test_run_input_1(x):
-    r = dotscience.Run()
-    assert r.input(x) == x
+    r = dotscience.Run("/workspace-root")
+    xpath = os.path.normpath("/workspace-root/" + x)
+    assert r.input(xpath) == xpath
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
                         "summary": {},
                         "parameters": {},
                         "output": [],
-                        "input": [os.path.normpath(x)],
+                        "input": [os.path.relpath(xpath,start="/workspace-root")],
                         "labels": {},
     }, sort_keys=True, indent=4), r._id)
 
+def test_run_input_relative():
+    orig_dir = os.getcwd()
+    r = dotscience.Run(orig_dir)
+    os.mkdir("test_run_input_relative.tmp")
+    try:
+        os.chdir("test_run_input_relative.tmp")
+        assert r.input("../foo/test.csv") == "../foo/test.csv"
+        assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+            (r._id, json.dumps({"version": "1",
+                                "summary": {},
+                                "parameters": {},
+                                "output": [],
+                                "input": ["foo/test.csv"],
+                                "labels": {},
+            }, sort_keys=True, indent=4), r._id)
+    finally:
+        os.chdir(orig_dir)
+        os.rmdir("test_run_input_relative.tmp")
+
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
 def test_run_input_2(x):
-    r = dotscience.Run()
-    r.add_input(x[0])
-    r.add_input(x[1])
-    x = set([os.path.normpath(y) for y in x])
+    r = dotscience.Run("/workspace-root")
+    xp0 = os.path.normpath("/workspace-root/" + x[0])
+    xp1 = os.path.normpath("/workspace-root/" + x[1])
+    r.add_input(xp0)
+    r.add_input(xp1)
+    x = set([os.path.relpath(y,start="/workspace-root") for y in (xp0,xp1)])
     len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
 
 @given(lists(text(min_size=1), unique=True))
 def test_run_input_n(x):
-    x = set([os.path.normpath(y) for y in x])
-    r = dotscience.Run()
+    x = set([os.path.normpath("/workspace-root/" + y) for y in x])
+    r = dotscience.Run("/workspace-root")
     r.add_inputs(*x)
-    len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
+    len(r._inputs) == len(x) and sorted(r._inputs) == sorted([os.path.relpath(y,start="/workspace-root") for y in x])
 
 @given(text())
 def test_run_output_1(x):
-    r = dotscience.Run()
-    assert r.output(x) == x
+    r = dotscience.Run("/workspace-root")
+    xpath = os.path.normpath("/workspace-root/" + x)
+    assert r.output(xpath) == xpath
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
                         "summary": {},
                         "parameters": {},
                         "input": [],
-                        "output": [os.path.normpath(x)],
+                        "output": [os.path.relpath(xpath,start="/workspace-root")],
                         "labels": {},
     }, sort_keys=True, indent=4), r._id)
 
+def test_run_output_relative():
+    orig_dir = os.getcwd()
+    r = dotscience.Run(orig_dir)
+    os.mkdir("test_run_output_relative.tmp")
+    try:
+        os.chdir("test_run_output_relative.tmp")
+        assert r.output("../foo/test.csv") == "../foo/test.csv"
+        assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+            (r._id, json.dumps({"version": "1",
+                                "summary": {},
+                                "parameters": {},
+                                "output": ["foo/test.csv"],
+                                "input": [],
+                                "labels": {},
+            }, sort_keys=True, indent=4), r._id)
+    finally:
+        os.chdir(orig_dir)
+        os.rmdir("test_run_output_relative.tmp")
+
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
 def test_run_output_2(data):
-    r = dotscience.Run()
-    r.add_output(data[0])
-    r.add_output(data[1])
-    data = set([os.path.normpath(x) for x in data])
+    r = dotscience.Run("/workspace-root")
+    xp0 = os.path.normpath("/workspace-root/" + data[0])
+    xp1 = os.path.normpath("/workspace-root/" + data[1])
+    r.add_output(xp0)
+    r.add_output(xp1)
+    data = set([os.path.relpath(x,start="/workspace-root") for x in (xp0,xp1)])
     len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
 
 @given(lists(text(min_size=1), unique=True))
 def test_run_output_n(data):
-    data = set([os.path.normpath(x) for x in data])
-    r = dotscience.Run()
+    data = set([os.path.normpath("/workspace-root/" + x) for x in data])
+    r = dotscience.Run("/workspace-root")
     r.add_outputs(*data)
-    len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
+    len(r._outputs) == len(data) and sorted(r._outputs) == sorted([os.path.relpath(y,start="/workspace-root") for y in data])
 
 @given(text())
 def test_run_labels_1(x):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     assert r.label("food", x) == x
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -114,7 +158,7 @@ def test_run_labels_1(x):
 
 @given(text(),text(),text(),text())
 def test_run_labels_multi(a,b,c,d):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.add_labels("a", a)
     r.add_labels(b=b)
     r.add_labels("c", c, d=d)
@@ -129,7 +173,7 @@ def test_run_labels_multi(a,b,c,d):
 
 @given(text())
 def test_run_summary_1(x):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     assert r.summary("food", x) == x
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -142,7 +186,7 @@ def test_run_summary_1(x):
 
 @given(text(),text(),text(),text())
 def test_run_summary_multi(a,b,c,d):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.add_summaries("a", a)
     r.add_summaries(b=b)
     r.add_summaries("c", c, d=d)
@@ -157,7 +201,7 @@ def test_run_summary_multi(a,b,c,d):
 
 @given(text())
 def test_run_parameter_1(x):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     assert r.parameter("food", x) == x
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -170,7 +214,7 @@ def test_run_parameter_1(x):
 
 @given(text(),text(),text(),text())
 def test_run_parameter_multi(a,b,c,d):
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.add_parameters("a", a)
     r.add_parameters(b=b)
     r.add_parameters("c", c, d=d)
@@ -184,7 +228,7 @@ def test_run_parameter_multi(a,b,c,d):
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_start_1():
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.start()
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -197,7 +241,7 @@ def test_run_start_1():
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_start_2():
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.start()
     try:
         r.start()
@@ -207,7 +251,7 @@ def test_run_start_2():
         assert 'Did not get a RuntimeError when attempting to start a run twice'
 
 def test_run_end_1():
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.end()
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -220,7 +264,7 @@ def test_run_end_1():
     }, sort_keys=True, indent=4), r._id)
 
 def test_run_end_2():
-    r = dotscience.Run()
+    r = dotscience.Run("/workspace-root")
     r.end()
     time1 = r._end
     # Assume clock has enough resolution to not return the same timestamp for a second call to r.end()
@@ -316,7 +360,7 @@ def test_default_script_name():
     m1 = _parse(s1.getvalue())
 
     # This might be a fragile assertion...
-    assert m1["workload-file"] == "/usr/local/bin/pytest"
+    assert m1["workload-file"] == "../usr/local/bin/pytest"
 
 def test_explicit_script_name():
     ds = dotscience.Dotscience()
@@ -444,10 +488,11 @@ def test_error_b(d):
 def test_input_1a(d):
     s=io.StringIO()
     dotscience.start()
-    dotscience.add_input(d)
+    dp = os.path.normpath(os.getcwd() + "/" + d)
+    dotscience.add_input(dp)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["input"] == [os.path.normpath(d)]
+    assert m["input"] == [os.path.relpath(dp, start=os.getcwd())]
     assert m["output"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -458,10 +503,11 @@ def test_input_1a(d):
 def test_input_1b(d):
     s=io.StringIO()
     dotscience.start()
-    assert dotscience.input(d) == d
+    dp = os.path.normpath(os.getcwd() + "/" + d)
+    assert dotscience.input(dp) == dp
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["input"] == [os.path.normpath(d)]
+    assert m["input"] == [os.path.relpath(dp, start=os.getcwd())]
     assert m["output"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -470,13 +516,13 @@ def test_input_1b(d):
 
 @given(lists(text(min_size=1), unique=True))
 def test_input_n(d):
-    d = set([os.path.normpath(x) for x in d])
+    d = set([os.path.normpath(os.getcwd() + "/" + x) for x in d])
     s=io.StringIO()
     dotscience.start()
     dotscience.add_inputs(*d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert len(m["input"]) == len(d) and sorted(m["input"]) == sorted(d)
+    assert len(m["input"]) == len(d) and sorted(m["input"]) == sorted([os.path.relpath(x, start=os.getcwd()) for x in d])
     assert m["output"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -487,10 +533,11 @@ def test_input_n(d):
 def test_output_1a(d):
     s=io.StringIO()
     dotscience.start()
-    dotscience.add_output(d)
+    dp = os.path.normpath(os.getcwd() + "/" + d)
+    dotscience.add_output(dp)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["output"] == [os.path.normpath(d)]
+    assert m["output"] == [os.path.relpath(dp, start=os.getcwd())]
     assert m["input"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -501,10 +548,11 @@ def test_output_1a(d):
 def test_output_1b(d):
     s=io.StringIO()
     dotscience.start()
-    assert dotscience.output(d) == d
+    dp = os.path.normpath(os.getcwd() + "/" + d)
+    assert dotscience.output(dp) == dp
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert m["output"] == [os.path.normpath(d)]
+    assert m["output"] == [os.path.relpath(dp, start=os.getcwd())]
     assert m["input"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}
@@ -513,13 +561,13 @@ def test_output_1b(d):
 
 @given(lists(text(min_size=1), unique=True))
 def test_output_n(d):
-    d = set([os.path.normpath(x) for x in d])
+    d = set([os.path.normpath(os.getcwd() + "/" + x) for x in d])
     s=io.StringIO()
     dotscience.start()
     dotscience.add_outputs(*d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
-    assert len(m["output"]) == len(d) and sorted(m["output"]) == sorted(d)
+    assert len(m["output"]) == len(d) and sorted(m["output"]) == sorted([os.path.relpath(x, start=os.getcwd()) for x in d])
     assert m["input"] == []
     assert m["labels"] == {}
     assert m["parameters"] == {}

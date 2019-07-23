@@ -7,7 +7,7 @@ import sys
 import os
 
 class Run:
-    def __init__(self):
+    def __init__(self, root):
         self._id = None
         self._error = None
         self._description = None
@@ -20,6 +20,7 @@ class Run:
         self._end = None
         self._workload_file = None
         self._mode = None
+        self._root = root
 
     def _set_workload_file(self, workload_file):
         self._workload_file = workload_file
@@ -59,7 +60,7 @@ class Run:
         return description
 
     def add_input(self, filename):
-        filename_str = os.path.normpath(str(filename))
+        filename_str = os.path.relpath(str(filename),start=self._root)
         self._inputs.add(filename_str)
 
     def add_inputs(self, *args):
@@ -71,7 +72,7 @@ class Run:
         return filename
 
     def add_output(self, filename):
-        filename_str = os.path.normpath(str(filename))
+        filename_str = os.path.relpath(str(filename),start=self._root)
         self._outputs.add(filename_str)
 
     def add_outputs(self, *args):
@@ -175,6 +176,7 @@ class Dotscience:
     def __init__(self):
         self._mode = None
         self._workload_file = None
+        self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
 
     def interactive(self):
         if self._mode == None or self._mode == "interactive":
@@ -187,9 +189,9 @@ class Dotscience:
         if self._mode == None or self._mode == "script":
             self._mode = "script"
             if script_path == None:
-                self._workload_file = os.path.normpath(sys.argv[0])
+                self._workload_file = os.path.relpath(str(sys.argv[0]),start=self._root)
             else:
-                self._workload_file = script_path
+                self._workload_file = os.path.relpath(str(script_path),start=self._root)
         else:
             raise RuntimeError('An attempt was mode to select script mode for the Dotscience Python Library when it was in %s mode' % (self._mode,))
 
@@ -239,7 +241,7 @@ class Dotscience:
     # Proxy things through to the current run
 
     def start(self, description = None):
-        self.currentRun = Run()
+        self.currentRun = Run(self._root)
         self.currentRun.start()
         if description != None:
             self.currentRun.set_description(description)
@@ -407,7 +409,6 @@ def parameter(label, value):
 
 def debug():
     _defaultDS.debug()
-
 
 from ._version import get_versions
 __version__ = get_versions()['version']
