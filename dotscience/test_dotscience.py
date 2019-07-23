@@ -57,6 +57,25 @@ def test_run_input_1(x):
                         "labels": {},
     }, sort_keys=True, indent=4), r._id)
 
+def test_run_input_relative():
+    orig_dir = os.getcwd()
+    r = dotscience.Run(orig_dir)
+    os.mkdir("test_run_input_relative.tmp")
+    try:
+        os.chdir("test_run_input_relative.tmp")
+        assert r.input("../foo/test.csv") == "../foo/test.csv"
+        assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+            (r._id, json.dumps({"version": "1",
+                                "summary": {},
+                                "parameters": {},
+                                "output": [],
+                                "input": ["foo/test.csv"],
+                                "labels": {},
+            }, sort_keys=True, indent=4), r._id)
+    finally:
+        os.chdir(orig_dir)
+        os.rmdir("test_run_input_relative.tmp")
+
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
 def test_run_input_2(x):
     r = dotscience.Run("/workspace-root")
@@ -87,6 +106,25 @@ def test_run_output_1(x):
                         "output": [os.path.relpath(xpath,start="/workspace-root")],
                         "labels": {},
     }, sort_keys=True, indent=4), r._id)
+
+def test_run_output_relative():
+    orig_dir = os.getcwd()
+    r = dotscience.Run(orig_dir)
+    os.mkdir("test_run_output_relative.tmp")
+    try:
+        os.chdir("test_run_output_relative.tmp")
+        assert r.output("../foo/test.csv") == "../foo/test.csv"
+        assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+            (r._id, json.dumps({"version": "1",
+                                "summary": {},
+                                "parameters": {},
+                                "output": ["foo/test.csv"],
+                                "input": [],
+                                "labels": {},
+            }, sort_keys=True, indent=4), r._id)
+    finally:
+        os.chdir(orig_dir)
+        os.rmdir("test_run_output_relative.tmp")
 
 @given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
 def test_run_output_2(data):
