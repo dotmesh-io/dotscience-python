@@ -208,10 +208,8 @@ class Dotscience:
             runMode = os.getenv("DOTSCIENCE_WORKLOAD_TYPE", "")
             if runMode == "jupyter":
                 self.interactive()
-                print ("Neither interactive() or script() have been invoked, but we seem to be running inside Jupyter, so I am assuming interactive mode.")
             elif runMode == "command":
                 self.script()
-                print ("Neither interactive() or script() have been invoked, but we seem to be running as a command task, so I am assuming script mode with %s as the script filename." % (self._workload_file,))
             else:
                 raise RuntimeError(
                     'To use the Dotscience Python Library, you need to select interactive '
