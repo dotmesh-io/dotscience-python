@@ -311,6 +311,24 @@ def test_no_mode():
     else:
         assert 'Did not get a RuntimeError when attempting to publish without choosing a mode'
 
+def test_notice_jupyter_mode():
+    try:
+        os.environ["DOTSCIENCE_WORKLOAD_TYPE"] = "jupyter"
+        ds = dotscience.Dotscience()
+        ds.publish()
+        assert ds._mode == "interactive"
+    finally:
+        os.unsetenv("DOTSCIENCE_WORKLOAD_TYPE")
+
+def test_notice_command_mode():
+    try:
+        os.environ["DOTSCIENCE_WORKLOAD_TYPE"] = "command"
+        ds = dotscience.Dotscience()
+        ds.publish()
+        assert ds._mode == "script"
+    finally:
+        os.unsetenv("DOTSCIENCE_WORKLOAD_TYPE")
+
 def test_conflicting_mode_1():
     ds = dotscience.Dotscience()
     try:

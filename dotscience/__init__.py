@@ -205,9 +205,15 @@ class Dotscience:
 
     def publish(self, description = None, stream = sys.stdout):
         if self._mode == None:
-            raise RuntimeError(
-                'To use the Dotscience Python Library, you need to select interactive '
-                '(e.g. Jupyter) or script mode with the interactive() or script() functions.'
+            runMode = os.getenv("DOTSCIENCE_WORKLOAD_TYPE", "")
+            if runMode == "jupyter":
+                self.interactive()
+            elif runMode == "command":
+                self.script()
+            else:
+                raise RuntimeError(
+                    'To use the Dotscience Python Library, you need to select interactive '
+                    '(e.g. Jupyter) or script mode with the interactive() or script() functions.'
             )
         self._check_started()
 
