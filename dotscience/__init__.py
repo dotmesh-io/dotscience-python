@@ -6,6 +6,18 @@ import uuid
 import sys
 import os
 
+# Paths will be relative to root, not necessarily cwd
+def _add_output_path(root, nameset, path):
+    full_path = os.path.join(root, path)
+
+    if os.path.isdir(full_path):
+        ents = os.listdir(full_path)
+        for ent in ents:
+            fn = os.path.join(path, ent)
+            _add_output_path(root, nameset, fn)
+    else:
+        nameset.add(path)
+
 class Run:
     def __init__(self, root):
         self._id = None
@@ -59,9 +71,18 @@ class Run:
         self.set_description(description)
         return description
 
-    def add_input(self, filename):
+    def add_input_file(self, filename):
         filename_str = os.path.relpath(str(filename),start=self._root)
         self._inputs.add(filename_str)
+
+    def add_input(self, filename):
+        if os.path.isdir(filename):
+            ents = os.listdir(filename)
+            for ent in ents:
+                fn = os.path.join(filename, ent)
+                self.add_input(fn)
+        else:
+            self.add_input_file(filename)
 
     def add_inputs(self, *args):
         for filename in args:
@@ -71,6 +92,10 @@ class Run:
         self.add_input(filename)
         return filename
 
+    # add_output does not recursively expand directories like
+    # add_input because it's called BEFORE the output happens - the
+    # files might not exist yet.  So expansion happens in metadata()
+    # below!
     def add_output(self, filename):
         filename_str = os.path.relpath(str(filename),start=self._root)
         self._outputs.add(filename_str)
@@ -132,10 +157,19 @@ class Run:
         return value
 
     def metadata(self):
+        # We expanded input directories on the way in, because we
+        # expect the files to exist before add_input is called; but we
+        # only expand output directories here at the end, because we
+        # expect them to be created AFTER add_output is called.
+
+        expanded_outputs = set()
+        for o in self._outputs:
+            _add_output_path(self._root, expanded_outputs, o)
+
         r = {
             "version": "1",
-            "input": list(self._inputs),
-            "output": list(self._outputs),
+            "input": sorted(self._inputs),
+            "output": sorted(expanded_outputs),
             "labels": self._labels,
             "summary": self._summary,
             "parameters": self._parameters
