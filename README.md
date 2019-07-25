@@ -71,6 +71,8 @@ This instructs the library to record the script filename (from `sys.argv[0]`) in
 
 If `sys.argv[0]` isn't helpful in some other situation, you can call `ds.script('FILENAME')` to specify the script file, relative to the current working directory. In fact, in a Jupyter notebook, you could specify `ds.script('my-notebook.ipynb')` to manually specify the notebook file and override the automatic recording of the notebook file, but there wouldn't be any point!
 
+If you don't call either `ds.interactive()` or `ds.script()`, the library will try and guess by examining its environment. This should work in most cases, except if you call a script from inside JupyterLab (either through a terminal, or by calling `system()` or similar from your notebook), whereupon it will think it's in interactive mode - so it's best to include `ds.script()` in your scripts, just in case!
+
 ## All the things you can record
 
 There's a lot more than just data files and summary stats that Dotscience will keep track of for you - and there's a choice of convenient ways to specify each thing, so it can fit neatly into your code. Here's the full list:
@@ -257,6 +259,14 @@ ds.add_outputs('output_file_1.csv', 'output_file_2.csv')
 
 ds.publish('Did some awesome data science!')
 ```
+
+You can also name directories as inputs and outputs.
+
+In the case of a directory as an input, the directory will be scanned and all the files in that directory (or its subdirectories) will be recorded as inputs at the time when `ds.input()`, `ds.add_input()` or `ds.add_inputs()` is called; any new files that crop up later will NOT be included, as it's assumed you'll read the files right after the call, so any subsequently-added files were the result of later processing steps.
+
+In the case of a directory marked as an output, the directory will only be scanned when the run is published. This is because you will most like call `ds.output()` or similar on an empty directory, then a subsequent step will fill that directory with files. The directory name is stored, and when the run is published, that directory (and all its subdirectories) will be scanned for files to record as outputs.
+
+Note that in either case, relative pathnames are interpreted relative to the current working directory; the library will handle converting them into paths relative to the workspace root, as required by the run metadata format.
 
 ### Labels
 
