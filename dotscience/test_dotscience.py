@@ -6,9 +6,10 @@ import re
 import io
 import os
 import sys
+import shutil
 
 from hypothesis import given, assume, note
-from hypothesis.strategies import text, lists
+from hypothesis.strategies import text, lists, sampled_from
 
 ###
 ### Test the Run class
@@ -25,6 +26,9 @@ def test_run_null():
     "version": "1"
 }[[/DOTSCIENCE-RUN:%s]]""" % (r._id, r._id)
 
+input_files=["test.csv","/workspace-root/test.csv","data/test.csv"]
+output_files=["test.csv","/workspace-root/test.csv","data/test.csv"]
+    
 @given(text(),text())
 def test_run_basics(error, description):
     r = dotscience.Run("/workspace-root")
@@ -43,10 +47,13 @@ def test_run_basics(error, description):
     "workload-file": "nonsense.py"
 }[[/DOTSCIENCE-RUN:%s]]""" % (r._id, json.dumps(description), json.dumps(error), r._id)
 
-@given(text())
+def tidy_path(p):
+    return os.path.normpath(p.replace("\x00"," "))
+
+@given(sampled_from(input_files))
 def test_run_input_1(x):
     r = dotscience.Run("/workspace-root")
-    xpath = os.path.normpath("/workspace-root/" + x)
+    xpath = tidy_path("/workspace-root/" + x)
     assert r.input(xpath) == xpath
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -76,27 +83,56 @@ def test_run_input_relative():
         os.chdir(orig_dir)
         os.rmdir("test_run_input_relative.tmp")
 
-@given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
+@given(lists(sampled_from(input_files), min_size=2, max_size=2, unique=True))
 def test_run_input_2(x):
     r = dotscience.Run("/workspace-root")
-    xp0 = os.path.normpath("/workspace-root/" + x[0])
-    xp1 = os.path.normpath("/workspace-root/" + x[1])
+    xp0 = tidy_path("/workspace-root/" + x[0])
+    xp1 = tidy_path("/workspace-root/" + x[1])
     r.add_input(xp0)
     r.add_input(xp1)
     x = set([os.path.relpath(y,start="/workspace-root") for y in (xp0,xp1)])
     len(r._inputs) == len(x) and sorted(r._inputs) == sorted(x)
 
-@given(lists(text(min_size=1), unique=True))
+@given(lists(sampled_from(input_files), unique=True))
 def test_run_input_n(x):
-    x = set([os.path.normpath("/workspace-root/" + y) for y in x])
+    x = set([tidy_path("/workspace-root/" + y) for y in x])
     r = dotscience.Run("/workspace-root")
     r.add_inputs(*x)
     len(r._inputs) == len(x) and sorted(r._inputs) == sorted([os.path.relpath(y,start="/workspace-root") for y in x])
 
-@given(text())
+def test_run_input_recursive():
+    orig_dir = os.getcwd()
+    try:
+        os.mkdir("test_run_input_recursive.tmp")
+        with open("test_run_input_recursive.tmp/file1", "w") as f:
+            f.write("File 1")
+        os.mkdir("test_run_input_recursive.tmp/a")
+        with open("test_run_input_recursive.tmp/a/file2", "w") as f:
+            f.write("File 2")
+        with open("test_run_input_recursive.tmp/a/file3", "w") as f:
+            f.write("File 3")
+        os.mkdir("test_run_input_recursive.tmp/b")
+        r = dotscience.Run(orig_dir)
+        assert r.input("test_run_input_recursive.tmp") == "test_run_input_recursive.tmp"
+        assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+            (r._id, json.dumps({"version": "1",
+                                "summary": {},
+                                "parameters": {},
+                                "input": [
+                                    "test_run_input_recursive.tmp/a/file2",
+                                    "test_run_input_recursive.tmp/a/file3",
+                                    "test_run_input_recursive.tmp/file1"
+                                ],
+                                "output": [],
+                                "labels": {},
+            }, sort_keys=True, indent=4), r._id)
+    finally:
+        shutil.rmtree("test_run_input_recursive.tmp")
+
+@given(sampled_from(output_files))
 def test_run_output_1(x):
     r = dotscience.Run("/workspace-root")
-    xpath = os.path.normpath("/workspace-root/" + x)
+    xpath = tidy_path("/workspace-root/" + x)
     assert r.output(xpath) == xpath
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
@@ -126,22 +162,53 @@ def test_run_output_relative():
         os.chdir(orig_dir)
         os.rmdir("test_run_output_relative.tmp")
 
-@given(lists(text(min_size=1), min_size=2, max_size=2, unique=True))
+@given(lists(sampled_from(output_files), min_size=2, max_size=2, unique=True))
 def test_run_output_2(data):
     r = dotscience.Run("/workspace-root")
-    xp0 = os.path.normpath("/workspace-root/" + data[0])
-    xp1 = os.path.normpath("/workspace-root/" + data[1])
+    xp0 = tidy_path("/workspace-root/" + data[0])
+    xp1 = tidy_path("/workspace-root/" + data[1])
     r.add_output(xp0)
     r.add_output(xp1)
     data = set([os.path.relpath(x,start="/workspace-root") for x in (xp0,xp1)])
     len(r._outputs) == len(data) and sorted(r._outputs) == sorted(data)
 
-@given(lists(text(min_size=1), unique=True))
+@given(lists(sampled_from(output_files), unique=True))
 def test_run_output_n(data):
-    data = set([os.path.normpath("/workspace-root/" + x) for x in data])
+    data = set([tidy_path("/workspace-root/" + x) for x in data])
     r = dotscience.Run("/workspace-root")
     r.add_outputs(*data)
     len(r._outputs) == len(data) and sorted(r._outputs) == sorted([os.path.relpath(y,start="/workspace-root") for y in data])
+
+def test_run_output_recursive():
+    orig_dir = os.getcwd()
+    try:
+        r = dotscience.Run(orig_dir)
+        assert r.output("test_run_output_recursive.tmp") == "test_run_output_recursive.tmp"
+
+        os.mkdir("test_run_output_recursive.tmp")
+        with open("test_run_output_recursive.tmp/file1", "w") as f:
+            f.write("File 1")
+        os.mkdir("test_run_output_recursive.tmp/a")
+        with open("test_run_output_recursive.tmp/a/file2", "w") as f:
+            f.write("File 2")
+        with open("test_run_output_recursive.tmp/a/file3", "w") as f:
+            f.write("File 3")
+        os.mkdir("test_run_output_recursive.tmp/b")
+
+        assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+            (r._id, json.dumps({"version": "1",
+                                "summary": {},
+                                "parameters": {},
+                                "input": [],
+                                "output": [
+                                    "test_run_output_recursive.tmp/a/file2",
+                                    "test_run_output_recursive.tmp/a/file3",
+                                    "test_run_output_recursive.tmp/file1"
+                                ],
+                                "labels": {},
+            }, sort_keys=True, indent=4), r._id)
+    finally:
+        shutil.rmtree("test_run_output_recursive.tmp")
 
 @given(text())
 def test_run_labels_1(x):
@@ -502,11 +569,11 @@ def test_error_b(d):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-@given(text())
+@given(sampled_from(input_files))
 def test_input_1a(d):
     s=io.StringIO()
     dotscience.start()
-    dp = os.path.normpath(os.getcwd() + "/" + d)
+    dp = tidy_path(os.getcwd() + "/" + d)
     dotscience.add_input(dp)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -517,11 +584,11 @@ def test_input_1a(d):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-@given(text())
+@given(sampled_from(input_files))
 def test_input_1b(d):
     s=io.StringIO()
     dotscience.start()
-    dp = os.path.normpath(os.getcwd() + "/" + d)
+    dp = tidy_path(os.getcwd() + "/" + d)
     assert dotscience.input(dp) == dp
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -532,9 +599,9 @@ def test_input_1b(d):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-@given(lists(text(min_size=1), unique=True))
+@given(lists(sampled_from(input_files), unique=True))
 def test_input_n(d):
-    d = set([os.path.normpath(os.getcwd() + "/" + x) for x in d])
+    d = set([tidy_path(os.getcwd() + "/" + x) for x in d])
     s=io.StringIO()
     dotscience.start()
     dotscience.add_inputs(*d)
@@ -547,11 +614,11 @@ def test_input_n(d):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-@given(text())
+@given(sampled_from(output_files))
 def test_output_1a(d):
     s=io.StringIO()
     dotscience.start()
-    dp = os.path.normpath(os.getcwd() + "/" + d)
+    dp = tidy_path(os.getcwd() + "/" + d)
     dotscience.add_output(dp)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -562,11 +629,11 @@ def test_output_1a(d):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-@given(text())
+@given(sampled_from(output_files))
 def test_output_1b(d):
     s=io.StringIO()
     dotscience.start()
-    dp = os.path.normpath(os.getcwd() + "/" + d)
+    dp = tidy_path(os.getcwd() + "/" + d)
     assert dotscience.output(dp) == dp
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
@@ -577,9 +644,9 @@ def test_output_1b(d):
     assert m["summary"] == {}
     assert m["workload-file"] == TEST_WORKLOAD_FILE
 
-@given(lists(text(min_size=1), unique=True))
+@given(lists(sampled_from(output_files), unique=True))
 def test_output_n(d):
-    d = set([os.path.normpath(os.getcwd() + "/" + x) for x in d])
+    d = set([tidy_path(os.getcwd() + "/" + x) for x in d])
     s=io.StringIO()
     dotscience.start()
     dotscience.add_outputs(*d)
