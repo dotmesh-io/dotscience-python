@@ -45,7 +45,6 @@ deploy_pypi:
     - ./shipit-pypi.sh -u $PYPI_USER -p $PYPI_PASSWORD
     - docker login -u $QUAY_USER -p $QUAY_PASSWORD $RELEASE_DOCKER_REGISTRY
     - CI_DOCKER_PYTHON_IMAGE=$RELEASE_DOCKER_REGISTRY/$RELEASE_DOCKER_REPOSITORY/dotscience-python3:$CI_COMMIT_TAG ./shipit-docker.sh
-    - curl -X POST -F "token=$CI_JOB_TOKEN" -F "ref=master" -F "variables[DOTSCIENCE_TAG]=$CI_COMMIT_TAG" https://gitlab.dotmesh.com/api/v4/projects/dotmesh%2Fjupyterlab-tensorflow-sync/trigger/pipeline
   only:
     refs:
        - tags
