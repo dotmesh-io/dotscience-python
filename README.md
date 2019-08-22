@@ -329,6 +329,50 @@ ds.add_parameters(prefilter=True, smooth=True, smoothing_factor=12)
 ds.publish('Did some awesome data science!')
 ```
 
+### Models
+
+If your run has generated a Tensorflow model, you can declare it as such. This will load the model into the Model Library on the Dotscience Hub, and will enable automated deployment and model tracking features.
+
+This can be done with `model()` or `add_model()`:
+
+```python
+import dotscience as ds
+import tensorflow as tf
+
+ds.script()
+ds.start()
+
+...
+
+tf.saved_model.simple_save(
+    tf.keras.backend.get_session(),
+    ds.model(tf, "potatoes", "./model"),        # <---
+    inputs={'input_image_bytes': model.input},
+    outputs={t.name:t for t in model.outputs})
+
+...or...
+
+tf.saved_model.simple_save(
+    tf.keras.backend.get_session(),
+    "./model",
+    inputs={'input_image_bytes': model.input},
+    outputs={t.name:t for t in model.outputs})
+
+ds.add_model(tf, "potatoes", "./model")         # <---
+
+ds.publish('Trained the potato classifier')
+```
+
+The first argument to `model` or `add_model` should be the Tensorflow module itself, as imported by `import tensorflow as tf` in our example. This is used to identify it as a Tensorflow model (other types of model will be used in future), and to record the Tensorflow version used to generate it.
+
+The second argument is the model name for the Model Library. In this case, we called it `potatoes`, as our model is a potato classifier.
+
+The third argument is the path to the directory we're saving the Tensorflow model in, in this case `./model`. If called as `model()` rather than `add_model()`, this path is returned, so that it can be used to wrap the output path argument to `simple_save` in our example.
+
+For classifier models, an optional keyword argument is supported in both `model()` and `add_model()`: `classes` can be provided as a path to a CSV file listing your classes, to enable automatic model metric tracking in deployment.
+
+Note that we don't need to call `output()` for the paths passed to `model()` and `add_model()`; they automatically declare the files as outputs from this run.
+
 ## Multiple runs
 
 There's nothing to stop you from doing more than one "run" in one go; just call `start()` at the beginning and `publish()` at the end of each.

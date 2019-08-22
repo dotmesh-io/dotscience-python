@@ -210,6 +210,45 @@ def test_run_output_recursive():
     finally:
         shutil.rmtree("test_run_output_recursive.tmp")
 
+class MockTensorflow:
+    def __init__(self):
+        self.__name__ = "tensorflow"
+        self.__version__ = "1.2.3.4"
+
+@given(text(),sampled_from(output_files))
+def test_run_tensorflow_model(name,x):
+    r = dotscience.Run("/workspace-root")
+    xpath = tidy_path("/workspace-root/" + x)
+    relxpath = os.path.relpath(xpath,start="/workspace-root")
+    assert r.model(MockTensorflow(), name, xpath) == xpath
+    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+    (r._id, json.dumps({"version": "1",
+                        "summary": {},
+                        "parameters": {},
+                        "input": [],
+                        "output": [relxpath],
+                        "labels": {"artefact:"+name: "{\"files\":{\"model\":\"" + relxpath + "\"},\"type\":\"tensorflow-model\",\"version\":\"1.2.3.4\"}"},
+    }, sort_keys=True, indent=4), r._id)
+
+@given(text(),sampled_from(output_files),sampled_from(output_files))
+def test_run_tensorflow_model_with_classes(name,x,c):
+    assume(x != c)
+    r = dotscience.Run("/workspace-root")
+    xpath = tidy_path("/workspace-root/" + x)
+    relxpath = os.path.relpath(xpath,start="/workspace-root")
+    cpath = tidy_path("/workspace-root/" + c)
+    relcpath = os.path.relpath(cpath,start="/workspace-root")
+
+    assert r.model(MockTensorflow(), name, xpath, classes=cpath) == xpath
+    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+    (r._id, json.dumps({"version": "1",
+                        "summary": {},
+                        "parameters": {},
+                        "input": [],
+                        "output": sorted([relxpath,relcpath]),
+                        "labels": {"artefact:"+name: "{\"files\":{\"classes\":\"" + relcpath + "\",\"model\":\"" + relxpath + "\"},\"type\":\"tensorflow-model\",\"version\":\"1.2.3.4\"}"},
+    }, sort_keys=True, indent=4), r._id)
+
 @given(text())
 def test_run_labels_1(x):
     r = dotscience.Run("/workspace-root")

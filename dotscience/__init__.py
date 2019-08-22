@@ -124,6 +124,43 @@ class Run:
         self.add_label(label, value)
         return value
 
+    def model(self, kind, name, *args, **kwargs):
+        artefact_type = None
+        try:
+            if kind.__name__ == "tensorflow":
+                artefact_type = "tensorflow-model"
+        except:
+            pass
+
+        if artefact_type == None:
+            raise RuntimeError('Unknown model type %r' % (kind,))
+
+        aj = {"type": artefact_type}
+        files = {}
+        return_value = None
+        if artefact_type == "tensorflow-model":
+            aj["version"] = kind.__version__
+            if len(args) != 1:
+                raise RuntimeError('Tensorflow models require a path to the model as the third argument')
+            files["model"] = args[0]
+            return_value = args[0]
+            if "classes" in kwargs:
+                files["classes"] = kwargs["classes"]
+
+        relative_files = {}
+        for key in files:
+            self.add_output(files[key])
+            relative_files[key] = os.path.relpath(str(files[key]),start=self._root)
+        aj["files"] = relative_files
+
+        self.add_label("artefact:" + name, json.dumps(aj, sort_keys=True, separators=(',', ':')))
+
+        return return_value
+
+    def add_model(self, kind, name, *args, **kwargs):
+        self.model(kind, name, *args, **kwards)
+        return None
+
     def add_summary(self, label, value):
         self._summary[str(label)] = str(value)
 
