@@ -369,7 +369,7 @@ The second argument is the model name for the Model Library. In this case, we ca
 
 The third argument is the path to the directory we're saving the Tensorflow model in, in this case `./model`. If called as `model()` rather than `add_model()`, this path is returned, so that it can be used to wrap the output path argument to `simple_save` in our example.
 
-For classifier models, an optional keyword argument is supported in both `model()` and `add_model()`: `classes` can be provided as a path to a CSV file listing your classes, to enable automatic model metric tracking in deployment.
+For classifier models, an optional keyword argument is supported in both `model()` and `add_model()`: `classes` can be provided as a path to a JSON file listing your classes, to enable automatic model metric tracking in deployment.
 
 Note that we don't need to call `output()` for the paths passed to `model()` and `add_model()`; they automatically declare the files as outputs from this run.
 
