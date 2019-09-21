@@ -4,4 +4,5 @@ if [ ! -f env ]; then
     exit 1
 fi
 . ./env
+env
 PYTHONPATH=..:$PYTHONPATH python3 train.py

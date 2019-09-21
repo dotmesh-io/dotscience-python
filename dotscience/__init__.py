@@ -506,7 +506,7 @@ def parameter(label, value):
 def debug():
     _defaultDS.debug()
 
-def connect(username, apikey, hostname="https://cloud.dotscience.com/v2/dotmesh/"):
+def connect(username, apikey, hostname="https://cloud.dotscience.com/v2/dotmesh/rpc"):
     _defaultDS.connect(username, apikey, hostname)
 
 from ._version import get_versions
