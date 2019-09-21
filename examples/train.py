@@ -24,7 +24,7 @@ from tensorflow.keras import backend as K
 
 batch_size = 128
 num_classes = 10
-epochs = 12
+epochs = 1
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -78,3 +78,5 @@ score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
+#model.save("model.h5")
+tf.keras.experimental.export_saved_model(model, 'model')
