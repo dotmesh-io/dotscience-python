@@ -1,5 +1,9 @@
 from __future__ import print_function
 import dotscience as ds
+import os
+
+# defaults to connecting to prod
+ds.connect(os.getenv("DOTSCIENCE_USERNAME"), os.getenv("DOTSCIENCE_APIKEY"))
 
 ###
 

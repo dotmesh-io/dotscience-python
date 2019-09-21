@@ -6,6 +6,8 @@ import uuid
 import sys
 import os
 
+from dotmesh.client import DotmeshClient
+
 # Paths will be relative to root, not necessarily cwd
 def _add_output_path(root, nameset, path):
     full_path = os.path.join(root, path)
@@ -248,6 +250,23 @@ class Dotscience:
         self._mode = None
         self._workload_file = None
         self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
+        self._client = None
+
+    def connect(self, username, apikey, hostname):
+        # TODO: Make this fail if we're in a mode other than 'external' mode.
+        # Also, implement 'external' mode detection! (Absence of
+        # DOTSCIENCE_WORKLOAD_TYPE env var places the library in "external
+        # mode")
+        self._client = DotmeshClient(
+            cluster_url=hostname,
+            username=username,
+            api_key=apikey
+        )
+        import logging
+        logging.getLogger('jsonrpcclient.client.request').setLevel(logging.DEBUG)
+        print("Calling ping...")
+        result = self._client.ping()
+        print("result = %r", (result,))
 
     def interactive(self):
         if self._mode == None or self._mode == "interactive":
@@ -486,6 +505,9 @@ def parameter(label, value):
 
 def debug():
     _defaultDS.debug()
+
+def connect(username, apikey, hostname="https://cloud.dotscience.com/v2/dotmesh/"):
+    _defaultDS.connect(username, apikey, hostname)
 
 from ._version import get_versions
 __version__ = get_versions()['version']

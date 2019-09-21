@@ -1,1 +1,2 @@
 tensorflow==1.14.0
+datadots-api==0.2.0
