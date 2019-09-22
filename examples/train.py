@@ -3,7 +3,6 @@ import dotscience as ds
 import os
 
 # defaults to connecting to prod
-print(os.getenv("DOTSCIENCE_USERNAME"), os.getenv("DOTSCIENCE_APIKEY"))
 ds.connect(os.getenv("DOTSCIENCE_USERNAME"), os.getenv("DOTSCIENCE_APIKEY"))
 
 ###
@@ -16,7 +15,7 @@ def foo(x, deploy=True):
     print("Endpoint: https://tensorflow-a1b2c3.models.cloud.dotscience.com/\n")
     print("Creating Grafana dashboard... done")
     print("Dashboard: https://tensorflow-a1b2c3.dashboards.cloud.dotscience.com/\n")
-ds.publish = foo
+#ds.publish = foo
 
 ###
 
@@ -27,9 +26,9 @@ from tensorflow.keras.layers import Dense, Dropout, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras import backend as K
 
-batch_size = 128
-num_classes = 10
-epochs = 1
+batch_size = ds.parameter("batch_size", 128)
+num_classes = ds.parameter("num_classes", 10)
+epochs = ds.parameter("epochs", 1)
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -80,8 +79,11 @@ model.fit(x_train, y_train,
           verbose=1,
           validation_data=(x_test, y_test))
 score = model.evaluate(x_test, y_test, verbose=0)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+print('Test loss:', ds.metric("loss", score[0]))
+print('Test accuracy:', ds.metric("accuracy", score[1]))
 
 #model.save("model.h5")
-tf.keras.experimental.export_saved_model(model, 'model')
+#tf.keras.experimental.export_saved_model(model, ds.model(tf, 'model'))
+tf.keras.experimental.export_saved_model(model, ds.output('model'))
+
+ds.publish("trained mnist model")

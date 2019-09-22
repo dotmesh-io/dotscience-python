@@ -252,7 +252,7 @@ class Dotscience:
         self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
         self._client = None
 
-    def connect(self, username, apikey, hostname):
+    def connect(self, username, apikey, project, hostname):
         # TODO: Make this fail if we're in a mode other than 'external' mode.
         # Also, implement 'external' mode detection! (Absence of
         # DOTSCIENCE_WORKLOAD_TYPE env var places the library in "external
@@ -262,8 +262,7 @@ class Dotscience:
             username=username,
             api_key=apikey
         )
-        import logging
-        logging.getLogger('jsonrpcclient.client.request').setLevel(logging.DEBUG)
+        self._project = project
         print("Calling ping...")
         result = self._client.ping()
         print("result = %r", (result,))
@@ -274,6 +273,13 @@ class Dotscience:
             self._workload_file = None
         else:
             raise RuntimeError('An attempt was mode to select interactive mode for the Dotscience Python Library when it was in %s mode' % (self._mode,))
+
+    def remote(self):
+        if self._mode == None or self._mode == "remote":
+            self._mode = "remote"
+            self._workload_file = None
+        else:
+            raise RuntimeError('An attempt was mode to select remote mode for the Dotscience Python Library when it was in %s mode' % (self._mode,))
 
     def script(self, script_path = None):
         if self._mode == None or self._mode == "script":
@@ -293,7 +299,7 @@ class Dotscience:
         # record the start time of the first thing after the publish
         self.currentRun.lazy_start()
 
-    def publish(self, description = None, stream = sys.stdout):
+    def publish(self, description=None, stream=sys.stdout, build=False, deploy=False):
         if self._mode == None:
             runMode = os.getenv("DOTSCIENCE_WORKLOAD_TYPE", "")
             if runMode == "jupyter":
@@ -301,10 +307,7 @@ class Dotscience:
             elif runMode == "command":
                 self.script()
             else:
-                raise RuntimeError(
-                    'To use the Dotscience Python Library, you need to select interactive '
-                    '(e.g. Jupyter) or script mode with the interactive() or script() functions.'
-            )
+                self.remote()
         self._check_started()
 
         # end() will set the end timestamp, if the user hasn't already
@@ -322,7 +325,22 @@ class Dotscience:
         # impossible to distinguish different runs by ID.
         self.currentRun.newID()
 
-        stream.write(str(self.currentRun) + "\n")
+        if self._mode == "remote":
+            # In remote mode, we need to push output files (i.e. models) to the
+            # remote dotscience hub via the S3 api, then construct the run
+            # metadata ourselves and create a dotmesh commit, all while holding
+            # a lock on the dot.
+            #
+            # TODO: in the future, we should call a runs API on the gateway to
+            # decouple the run storage from dotmesh commit metadata (the
+            # gateway will soon have a separate runs database which will
+            # support streaming multi-epoch runs).
+            self._publish_remote_run(build, deploy)
+        else:
+            # In jupyter and command mode, we just write the current run out as
+            # JSON (into a notebook or stdout, respectively) to get picked by
+            # the agent's committer
+            stream.write(str(self.currentRun) + "\n")
 
         # After publishing, reset the start and end time so that we don't end
         # up with multiple runs with the same times (calling end() twice has no
@@ -333,9 +351,29 @@ class Dotscience:
         # start timer in this case.
         self.currentRun.forget_times()
 
+    def _publish_remote_run(self, build, deploy):
+        # NB: deploy=True implies build=True
+        try:
+            # - Lock the dot in the gateway
+            # - Upload output files via S3 API (ideally with an arg which
+            #   avoids making a commit for every uploaded file).
+            # - Craft the commit metadata for the run and call the Commit() API
+            #   directly on dotmesh on the hub
+            if build or deploy:
+                # - Build
+                pass
+            if deploy:
+                # - Deploy to Kubernetes
+                # - Set up Grafana dashboard
+                pass
+        except:
+            # - Log error
+            pass
+        finally:
+            # - Unlock the dot in the gateway
+            pass
 
     # Proxy things through to the current run
-
     def start(self, description = None):
         self.currentRun = Run(self._root)
         self.currentRun.start()
@@ -437,8 +475,11 @@ def interactive():
 def script(workload_file = None):
     _defaultDS.script(workload_file)
 
-def publish(description = None, stream = sys.stdout):
-    _defaultDS.publish(description, stream)
+def remote():
+    _defaultDS.remote()
+
+def publish(description=None, stream=sys.stdout, build=False, deploy=False):
+    _defaultDS.publish(description, stream, build, deploy)
 
 def start(description = None):
     _defaultDS.start(description)
@@ -494,6 +535,10 @@ def add_summaries(*args, **kwargs):
 def summary(label, value):
     return _defaultDS.summary(label, value)
 
+add_metric = add_summary
+add_metrics = add_summaries
+metric = summary
+
 def add_parameter(label, value):
     _defaultDS.add_parameter(label, value)
 
@@ -506,8 +551,8 @@ def parameter(label, value):
 def debug():
     _defaultDS.debug()
 
-def connect(username, apikey, hostname="https://cloud.dotscience.com/v2/dotmesh/rpc"):
-    _defaultDS.connect(username, apikey, hostname)
+def connect(username, apikey, project, hostname="https://cloud.dotscience.com/v2/dotmesh/rpc"):
+    _defaultDS.connect(username, apikey, project, hostname)
 
 from ._version import get_versions
 __version__ = get_versions()['version']
