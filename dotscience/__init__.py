@@ -353,25 +353,15 @@ class Dotscience:
 
     def _publish_remote_run(self, build, deploy):
         # NB: deploy=True implies build=True
-        try:
-            # - Lock the dot in the gateway
-            # - Upload output files via S3 API (ideally with an arg which
-            #   avoids making a commit for every uploaded file).
-            # - Craft the commit metadata for the run and call the Commit() API
-            #   directly on dotmesh on the hub
-            # - Unlock the dot in the gateway
-            if build or deploy:
-                # - Build
-                pass
-            if deploy:
-                # - Deploy to Kubernetes
-                # - Set up Grafana dashboard
-                pass
-        except:
-            # - Log error
+        # - Upload output files via S3 API in a tar stream
+        # - Craft the commit metadata for the run and call the Commit() API
+        #   directly on dotmesh on the hub
+        if build or deploy:
+            # - Build
             pass
-        finally:
-            # - Unlock the dot in the gateway, if not done already
+        if deploy:
+            # - Deploy to Kubernetes
+            # - Set up Grafana dashboard
             pass
 
     # Proxy things through to the current run
