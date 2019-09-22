@@ -359,6 +359,7 @@ class Dotscience:
             #   avoids making a commit for every uploaded file).
             # - Craft the commit metadata for the run and call the Commit() API
             #   directly on dotmesh on the hub
+            # - Unlock the dot in the gateway
             if build or deploy:
                 # - Build
                 pass
@@ -370,7 +371,7 @@ class Dotscience:
             # - Log error
             pass
         finally:
-            # - Unlock the dot in the gateway
+            # - Unlock the dot in the gateway, if not done already
             pass
 
     # Proxy things through to the current run
