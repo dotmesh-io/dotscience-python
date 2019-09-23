@@ -335,7 +335,7 @@ class Dotscience:
             # decouple the run storage from dotmesh commit metadata (the
             # gateway will soon have a separate runs database which will
             # support streaming multi-epoch runs).
-            self._publish_remote_run(build, deploy)
+            ret = self._publish_remote_run(build, deploy)
         else:
             # In jupyter and command mode, we just write the current run out as
             # JSON (into a notebook or stdout, respectively) to get picked by
@@ -350,19 +350,42 @@ class Dotscience:
         # via _check_started which does a lazy_start to cover resetting the
         # start timer in this case.
         self.currentRun.forget_times()
+        return ret
 
     def _publish_remote_run(self, build, deploy):
-        # NB: deploy=True implies build=True
+        ret = {}
         # - Upload output files via S3 API in a tar stream
+        print("Uploading model files... ", end="")
+        self._push_output_files()
         # - Craft the commit metadata for the run and call the Commit() API
         #   directly on dotmesh on the hub
+        run = self._commit_run_on_hub()
+        ret["run"] = ret
+        print("done\n")
+        print("Dotscience run: %s\n" % (run,))
+
+        # NB: deploy=True implies build=True
         if build or deploy:
             # - Build
-            pass
+            print("Building docker image... ", end="")
+            image = self._build_docker_image_on_hub()
+            ret["image"] = image
+            print("done\n")
+            print("Docker image: %s\n" % (image,))
         if deploy:
             # - Deploy to Kubernetes
+            print("Deploying to Kubernetes... ", end="")
+            endpoint = self._deploy_to_kube()
+            ret["endpoint"] = endpoint
+            print("done\n")
+            print("Endpoint: %s\n" % (endpoint,))
             # - Set up Grafana dashboard
-            pass
+            print("Creating Grafana dashboard... ", end="")
+            dashboard = self._setup_grafana()
+            ret["dashboard"] = dashboard
+            print("done\n")
+            print("Dashboard: %s\n" % (dashboard,))
+        return ret
 
     # Proxy things through to the current run
     def start(self, description = None):
