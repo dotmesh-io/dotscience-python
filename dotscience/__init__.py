@@ -361,13 +361,16 @@ class Dotscience:
         print("\n======== Dotscience publish ========\n")
         # - Upload output files via S3 API in a tar stream
         # TODO: maybe don't upload all output files, only ones tagged as model?
-        print("Uploading output/model files... ", end="")
+       
+        self._get_project_or_create(self._project_name, verbose=True)
+        
+        print("Uploading output/model files", end="")
         self._upload_output_files()
         # - Craft the commit metadata for the run and call the Commit() API
         #   directly on dotmesh on the hub
         run = self._commit_run_on_hub()
         ret["run"] = ret
-        print("done")
+        print(" done")
         print("Dotscience run: %s\n" % (run,))
 
         # NB: deploy=True implies build=True
@@ -399,8 +402,10 @@ class Dotscience:
         # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
         for f in self.currentRun.metadata()["output"]:
             self._upload(f)
+            print(".", end="")
+            sys.stdout.flush()
 
-    def _get_project_or_create(self, project_name):
+    def _get_project_or_create(self, project_name, verbose=False):
         if self._cached_project:
             return self._cached_project
         
@@ -408,18 +413,19 @@ class Dotscience:
         for project in projects.json():
             if project["name"] == project_name:
                 self._cached_project = project
+                if verbose:
+                    print("Found project %s." % (project_name,))
                 return project
         else:
             new = requests.post(self._hostname+"/v2/projects", auth=self._auth, json={"name": project_name})
             self._cached_project = new.json()
+            if verbose:
+                print("Created new project %s as it did not exist." % (project_name,))
             return new.json()
 
     def _upload(self, filename):
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
-        print("hostname = ", 
-            self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}",
-        )
         upload = requests.put(
             self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
             data=open(filename, 'rb').read(),
