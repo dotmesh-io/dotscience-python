@@ -5,6 +5,7 @@ import datetime
 import uuid
 import sys
 import os
+import requests
 
 from dotmesh.client import DotmeshClient
 
@@ -250,21 +251,25 @@ class Dotscience:
         self._mode = None
         self._workload_file = None
         self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
-        self._client = None
+        self._dotmesh_client = None
+        self._hostname = None
+        self._auth = None
+        self._cached_project = None
+        self._project_name = None
 
     def connect(self, username, apikey, project, hostname):
-        # TODO: Make this fail if we're in a mode other than 'external' mode.
-        # Also, implement 'external' mode detection! (Absence of
-        # DOTSCIENCE_WORKLOAD_TYPE env var places the library in "external
-        # mode")
-        self._client = DotmeshClient(
-            cluster_url=hostname,
+        # TODO: Make this fail if we're in a mode other than 'remote' mode.
+        # TODO: make publish etc fail if we're not connected in remote mode.
+        self._dotmesh_client = DotmeshClient(
+            cluster_url=hostname + "/v2/dotmesh/rpc",
             username=username,
             api_key=apikey
         )
-        self._project = project
+        self._hostname = hostname
+        self._auth = (username, apikey)
+        self._project_name = project
         print("Calling ping...")
-        result = self._client.ping()
+        result = self._dotmesh_client.ping()
         print("result = %r", (result,))
 
     def interactive(self):
@@ -328,8 +333,7 @@ class Dotscience:
         if self._mode == "remote":
             # In remote mode, we need to push output files (i.e. models) to the
             # remote dotscience hub via the S3 api, then construct the run
-            # metadata ourselves and create a dotmesh commit, all while holding
-            # a lock on the dot.
+            # metadata ourselves and create a dotmesh commit.
             #
             # TODO: in the future, we should call a runs API on the gateway to
             # decouple the run storage from dotmesh commit metadata (the
@@ -354,14 +358,16 @@ class Dotscience:
 
     def _publish_remote_run(self, build, deploy):
         ret = {}
+        print("\n======== Dotscience publish ========\n")
         # - Upload output files via S3 API in a tar stream
-        print("Uploading model files... ", end="")
-        self._push_output_files()
+        # TODO: maybe don't upload all output files, only ones tagged as model?
+        print("Uploading output/model files... ", end="")
+        self._upload_output_files()
         # - Craft the commit metadata for the run and call the Commit() API
         #   directly on dotmesh on the hub
         run = self._commit_run_on_hub()
         ret["run"] = ret
-        print("done\n")
+        print("done")
         print("Dotscience run: %s\n" % (run,))
 
         # NB: deploy=True implies build=True
@@ -370,22 +376,71 @@ class Dotscience:
             print("Building docker image... ", end="")
             image = self._build_docker_image_on_hub()
             ret["image"] = image
-            print("done\n")
+            print("done")
             print("Docker image: %s\n" % (image,))
         if deploy:
             # - Deploy to Kubernetes
             print("Deploying to Kubernetes... ", end="")
             endpoint = self._deploy_to_kube()
             ret["endpoint"] = endpoint
-            print("done\n")
+            print("done")
             print("Endpoint: %s\n" % (endpoint,))
             # - Set up Grafana dashboard
             print("Creating Grafana dashboard... ", end="")
             dashboard = self._setup_grafana()
             ret["dashboard"] = dashboard
-            print("done\n")
+            print("done")
             print("Dashboard: %s\n" % (dashboard,))
+        print("=====================================")
         return ret
+
+    def _upload_output_files(self):
+        # TODO: upload them all in one go, using PUT tarball API, once
+        # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
+        for f in self.currentRun.metadata()["output"]:
+            self._upload(f)
+
+    def _get_project_or_create(self, project_name):
+        if self._cached_project:
+            return self._cached_project
+        
+        projects = requests.get(self._hostname+"/v2/projects", auth=self._auth)
+        for project in projects.json():
+            if project["name"] == project_name:
+                self._cached_project = project
+                return project
+        else:
+            new = requests.post(self._hostname+"/v2/projects", auth=self._auth, json={"name": project_name})
+            self._cached_project = new.json()
+            return new.json()
+
+    def _upload(self, filename):
+        project = self._get_project_or_create(self._project_name)
+        dotName = f"project-{project['id'][:8]}-default-workspace"
+        print("hostname = ", 
+            self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}",
+        )
+        upload = requests.put(
+            self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
+            data=open(filename, 'rb').read(),
+        )
+        #with open(filename, 'rb') as f:
+        #    upload = requests.put(
+        #        self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
+        #        data=f
+        #    )
+
+    def _commit_run_on_hub(self):
+        pass
+
+    def _build_docker_image_on_hub(self):
+        pass
+
+    def _deploy_to_kube(self):
+        pass
+
+    def _setup_grafana(self):
+        pass
 
     # Proxy things through to the current run
     def start(self, description = None):
@@ -565,7 +620,7 @@ def parameter(label, value):
 def debug():
     _defaultDS.debug()
 
-def connect(username, apikey, project, hostname="https://cloud.dotscience.com/v2/dotmesh/rpc"):
+def connect(username, apikey, project, hostname="https://cloud.dotscience.com"):
     _defaultDS.connect(username, apikey, project, hostname)
 
 from ._version import get_versions
