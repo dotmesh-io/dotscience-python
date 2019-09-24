@@ -6,6 +6,7 @@ import uuid
 import sys
 import os
 import requests
+import time
 
 from dotmesh.client import DotmeshClient
 
@@ -260,6 +261,8 @@ class Dotscience:
     def connect(self, username, apikey, project, hostname):
         # TODO: Make this fail if we're in a mode other than 'remote' mode.
         # TODO: make publish etc fail if we're not connected in remote mode.
+        if not project:
+            raise Exception("Please specify a project name as the third argument to ds.connect()")
         self._dotmesh_client = DotmeshClient(
             cluster_url=hostname + "/v2/dotmesh/rpc",
             username=username,
@@ -414,27 +417,55 @@ class Dotscience:
             if project["name"] == project_name:
                 self._cached_project = project
                 if verbose:
-                    print("Found project %s." % (project_name,))
+                    print("Found project %s.\n" % (project_name,))
                 return project
         else:
             new = requests.post(self._hostname+"/v2/projects", auth=self._auth, json={"name": project_name})
             self._cached_project = new.json()
             if verbose:
-                print("Created new project %s as it did not exist." % (project_name,))
+                print("Created new project %s as it did not exist.\n" % (project_name,))
             return new.json()
 
     def _upload(self, filename):
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
-        upload = requests.put(
-            self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
-            data=open(filename, 'rb').read(),
-        )
-        #with open(filename, 'rb') as f:
-        #    upload = requests.put(
-        #        self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
-        #        data=f
-        #    )
+        #upload = requests.put(
+        #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
+        #    data=open(filename, 'rb').read(),
+        #)
+        while True:
+            with open(filename, 'rb') as f:
+                # workaround https://github.com/psf/requests/issues/2422 - unable
+                # to see response code when body isn't fully consumed due to error
+                # (e.g. 423 Locked)
+                import http
+                from base64 import b64encode
+
+                userAndPass = b64encode((f"{self._auth[0]}:{self._auth[1]}").encode("ascii")).decode("ascii")
+                headers = { 'Authorization' : 'Basic %s' %  userAndPass }
+
+                conn = http.client.HTTPSConnection("cloud.dotscience.com")
+                try:
+                    R = conn.request(
+                        "PUT",
+                        self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}",
+                        f,
+                        headers, # {"Content-Type": "application/json", "Accept": "application/json"},
+                    )
+                    # Success, return - otherwise we'll retry
+                    return
+                except Exception as e:
+                    print("Error uploading %s: %s" % (filename, e))
+                    new_R = conn.getresponse()
+                    print("Response code:", new_R.status)
+                    print("Response body:", new_R.read())
+                    print("Waiting a second and trying again...")
+                    time.sleep(1.0)
+
+                #upload = requests.put(
+                #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
+                #    data=f
+                #)
 
     def _commit_run_on_hub(self):
         pass
@@ -626,7 +657,10 @@ def parameter(label, value):
 def debug():
     _defaultDS.debug()
 
-def connect(username, apikey, project, hostname="https://cloud.dotscience.com"):
+def connect(username, apikey, project, hostname=""):
+    # Allow defaulting on empty string e.g. from env
+    if not hostname:
+        hostname = "https://cloud.dotscience.com"
     _defaultDS.connect(username, apikey, project, hostname)
 
 from ._version import get_versions

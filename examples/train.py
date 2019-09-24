@@ -3,7 +3,7 @@ import dotscience as ds
 import os
 
 # defaults to connecting to prod
-ds.connect(os.getenv("DOTSCIENCE_USERNAME"), os.getenv("DOTSCIENCE_APIKEY"), os.getenv("DOTSCIENCE_PROJECT_NAME"))
+ds.connect(os.getenv("DOTSCIENCE_USERNAME"), os.getenv("DOTSCIENCE_APIKEY"), os.getenv("DOTSCIENCE_PROJECT_NAME"), os.getenv("DOTSCIENCE_HOSTNAME"))
 
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
