@@ -7,8 +7,9 @@ import sys
 import os
 import requests
 import time
+import platform
 
-from dotmesh.client import DotmeshClient
+from dotmesh.client import DotmeshClient, DotName
 
 # Paths will be relative to root, not necessarily cwd
 def _add_output_path(root, nameset, path):
@@ -433,7 +434,9 @@ class Dotscience:
         #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
         #    data=open(filename, 'rb').read(),
         #)
-        while True:
+        attempt = 0
+        while attempt < 10:
+            attempt += 1
             with open(filename, 'rb') as f:
                 # workaround https://github.com/psf/requests/issues/2422 - unable
                 # to see response code when body isn't fully consumed due to error
@@ -444,7 +447,7 @@ class Dotscience:
                 userAndPass = b64encode((f"{self._auth[0]}:{self._auth[1]}").encode("ascii")).decode("ascii")
                 headers = { 'Authorization' : 'Basic %s' %  userAndPass }
 
-                conn = http.client.HTTPSConnection("cloud.dotscience.com")
+                conn = http.client.HTTPSConnection(self._hostname.split("://")[1])
                 try:
                     R = conn.request(
                         "PUT",
@@ -458,6 +461,9 @@ class Dotscience:
                     print("Error uploading %s: %s" % (filename, e))
                     new_R = conn.getresponse()
                     print("Response code:", new_R.status)
+                    if new_R.status == 423:
+                        print("--> Try stopping Jupyter within Dotscience or wait "
+                             "for the lock owner (e.g. task ID) listed below to finish, then try again")
                     print("Response body:", new_R.read())
                     print("Waiting a second and trying again...")
                     time.sleep(1.0)
@@ -466,15 +472,118 @@ class Dotscience:
                 #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
                 #    data=f
                 #)
+        raise Exception("didn't succeed after retrying 10 times")
 
     def _commit_run_on_hub(self):
-        pass
+        """
+        Set up commit metadata a bit like this:
+
+        author: luke24sep
+        exec.start: 20190924T112051.349340345
+        exec.end: 20190924T112354.535838796
+        exec.logs: ["4abc9799-3c45-4868-a669-d0e17e12e32b/agent-stdout.log","4abc9799-3c45-4868-a669-d0e17e12e32b/workload-stdout.log","4abc9799-3c45-4868-a669-d0e17e12e32b/workload-stderr.log","4abc9799-3c45-4868-a669-d0e17e12e32b/committer-stdout.log","4abc9799-3c45-4868-a669-d0e17e12e32b/committer-stderr.log"]
+        message: Dotscience runs
+        run.452521f7-c069-4271-b06e-dcd55635b871.authority: workload
+        run.452521f7-c069-4271-b06e-dcd55635b871.description: trained linear regression model
+        run.452521f7-c069-4271-b06e-dcd55635b871.end: 20190924T112352.941411
+        run.452521f7-c069-4271-b06e-dcd55635b871.input-files: ["combined.csv@125f91d5-9d5d-4123-95f3-c97448bfcfb0"]
+        run.452521f7-c069-4271-b06e-dcd55635b871.output-files: ["linear_regressor.pkl"]
+        run.452521f7-c069-4271-b06e-dcd55635b871.parameters.features: finishedsqft
+        run.452521f7-c069-4271-b06e-dcd55635b871.start: 20190924T112352.843016
+        run.452521f7-c069-4271-b06e-dcd55635b871.summary.lin_rmse: 855408.5050370345
+        run.452521f7-c069-4271-b06e-dcd55635b871.summary.regressor_score: 0.35677710327221
+        run.452521f7-c069-4271-b06e-dcd55635b871.workload-file: hello-dotscience.ipynb
+        runner.cpu: ["1x Intel(R) Xeon(R) CPU @ 2.30GHz"]
+        runner.name: 6ddeae52-untitled
+        runner.platform: linux
+        runner.platform_version: Linux 096f216f707b 4.15.0-1037-gcp #39-Ubuntu SMP Wed Jul 3 06:28:59 UTC 2019 x86_64 Linux
+        runner.ram: 3872563200
+        runner.version: Runner=Dotscience Docker Executor rev. 0.8.4 Agent=0.11.1
+        runs: ["452521f7-c069-4271-b06e-dcd55635b871"]
+        timestamp: 1569324234537654474
+        type: dotscience.run.v1
+        workload.image.hash: 'quay.io/dotmesh/jupyterlab-tensorflow@sha256:7d5ab277b31d6a4024d61728ffedbf0ffc76ab7bb2fa6d4b0938ebc6c7f22a59'
+        workload.image: quay.io/dotmesh/jupyterlab-tensorflow:0.2.11
+        workload.type: jupyter
+        """
+
+        def flatten(d):
+            # yield a sequence of (k, v) tuples where k is "a.b.c" for nested
+            # dict {a: {b: c:{ ... }}}
+            for k, v in d.items():
+                if k == "input":
+                    # XXX we can't add version strings to input files in this
+                    # context, so ignore them
+                    continue
+                if k == "output":
+                    k = "output-files"
+                if isinstance(v, dict):
+                    for kk, vv in flatten(v):
+                        yield k+"."+kk, vv
+                elif isinstance(v, str):
+                    yield k, v
+                else:
+                    # JSON encode e.g. lists or floats
+                    yield k, json.dumps(v)
+
+        commit = {}
+        commit["author"] = self._auth[0]
+        commit["exec.start"] = self.currentRun._start.strftime("%Y%m%dT%H%M%S.%f")
+        commit["exec.end"] = self.currentRun._end.strftime("%Y%m%dT%H%M%S.%f")
+        commit["exec.logs"] = json.dumps([])
+        commit["runner.name"] = platform.node()
+        commit["runner.platform"] = platform.system()
+        commit["runner.platform_version"] = platform.version()
+        # newID was called just before _publish_remote_run so this should be safe...
+        commit["runs"] = json.dumps([self.currentRun._id])
+        commit["workload.type"] = "remote"
+        commit["type"] = "dotscience.run.v1"
+
+        run = self.currentRun.metadata()
+
+        for k, v in flatten(run):
+            commit[f"run.{self.currentRun._id}.{k}"] = v
+        
+        commit[f"run.{self.currentRun._id}.authority"] = "remote"
+        # TODO the following might not work well from jupyter
+        commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
+        # TODO add timestamp?
+
+        project = self._get_project_or_create(self._project_name)
+        dotName = f"project-{project['id'][:8]}-default-workspace"
+        dot = self._dotmesh_client.getDot(dotname=dotName, ns=self._auth[0])
+        branch = dot.getBranch("master")
+        result = branch.commit("Remote dotscience run", commit)
+        # construct URL
+        runURL = f"{self._hostname}/project/{project['id']}/runs/summary/{self.currentRun._id}"
+        return runURL
 
     def _build_docker_image_on_hub(self):
-        pass
+        # TODO: call an API that builds a docker image from a model we just uploaded.
+        self._docker_image = "quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
+        return self._docker_image
 
     def _deploy_to_kube(self):
-        pass
+        # TODO: support specifying the deployer
+        deployers = requests.get(self._hostname+"/v2/deployers", auth=self._auth).json()
+        managed = [d for d in deployers if d["managed"]]
+        if len(managed) == 0:
+            raise Exception("Can't deploy - no managed deployers found")
+        deployer = managed[0]
+        deployment = requests.post(
+            self._hostname+f"/v2/deployers/{deployer['id']}/deployments",
+            json={
+                # TODO fill this in
+                "name": self._project_name.replace('-', ''),
+                "namespace": "default",
+                "image_name": self._docker_image,
+                "container_port": 8501,
+                "model_name": self._project_name.replace('-', ''), # XXX should this be the same as name?
+                "replicas": 1
+            },
+            auth=self._auth,
+	)
+        return deployment.json()["host"]
 
     def _setup_grafana(self):
         pass
