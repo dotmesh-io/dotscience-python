@@ -76,4 +76,6 @@ print('Test accuracy:', ds.metric("accuracy", score[1]))
 #tf.keras.experimental.export_saved_model(model, ds.model(tf, 'model'))
 tf.keras.experimental.export_saved_model(model, ds.output('model'))
 
+ds.model(tf, "mnist", "model")
+
 ds.publish("trained mnist model", deploy=True)

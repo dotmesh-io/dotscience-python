@@ -543,7 +543,7 @@ class Dotscience:
 
         for k, v in flatten(run):
             commit[f"run.{self.currentRun._id}.{k}"] = v
-        
+
         commit[f"run.{self.currentRun._id}.authority"] = "remote"
         # TODO the following might not work well from jupyter
         commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
@@ -559,6 +559,11 @@ class Dotscience:
         return runURL
 
     def _build_docker_image_on_hub(self):
+
+        # TODO find model id
+
+
+        #deployers = requests.(self._hostname+"/v2/deployers", auth=self._auth).json()
         # TODO: call an API that builds a docker image from a model we just uploaded.
         self._docker_image = "quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
         return self._docker_image
@@ -749,6 +754,9 @@ def add_summaries(*args, **kwargs):
 
 def summary(label, value):
     return _defaultDS.summary(label, value)
+
+def model(self, kind, name, *args, **kwargs):
+    return _defaultDS.model(kind, name, *args, **kwargs)
 
 add_metric = add_summary
 add_metrics = add_summaries
