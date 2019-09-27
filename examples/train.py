@@ -3,7 +3,15 @@ import dotscience as ds
 import os
 
 # defaults to connecting to prod
-ds.connect(os.getenv("DOTSCIENCE_USERNAME"), os.getenv("DOTSCIENCE_APIKEY"), os.getenv("DOTSCIENCE_PROJECT_NAME"), os.getenv("DOTSCIENCE_HOSTNAME"))
+ds.connect(
+    os.getenv("DOTSCIENCE_USERNAME"), 
+    os.getenv("DOTSCIENCE_APIKEY"), 
+    os.getenv("DOTSCIENCE_PROJECT_NAME"), 
+    os.getenv("DOTSCIENCE_HOSTNAME"), 
+    os.getenv("GRAFANA_HOSTNAME"),
+    os.getenv("GRAFANA_USERNAME"),
+    os.getenv("GRAFANA_PASSWORD"),
+)
 
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist

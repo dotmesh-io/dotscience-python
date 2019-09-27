@@ -8,6 +8,8 @@ import os
 import requests
 import time
 import platform
+import random
+import string
 
 from dotmesh.client import DotmeshClient, DotName
 
@@ -255,11 +257,13 @@ class Dotscience:
         self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
         self._dotmesh_client = None
         self._hostname = None
+        self._grafana_hostname = None
+        self._grafana_auth = None
         self._auth = None
         self._cached_project = None
         self._project_name = None
 
-    def connect(self, username, apikey, project, hostname):
+    def connect(self, username, apikey, project, hostname, g_hostname, g_username, g_apikey):
         # TODO: Make this fail if we're in a mode other than 'remote' mode.
         # TODO: make publish etc fail if we're not connected in remote mode.
         if not project:
@@ -270,11 +274,15 @@ class Dotscience:
             api_key=apikey
         )
         self._hostname = hostname
+
+        self._grafana_hostname = g_hostname
+        self._grafana_auth = (g_username, g_apikey)
+
         self._auth = (username, apikey)
         self._project_name = project
-        print("Calling ping...")
+        print("Checking connection... ", end="")
         result = self._dotmesh_client.ping()
-        print("result = %r", (result,))
+        print("connected!")
 
     def interactive(self):
         if self._mode == None or self._mode == "interactive":
@@ -376,7 +384,7 @@ class Dotscience:
         run = self._commit_run_on_hub()
         ret["run"] = ret
         print(" done")
-        print("Dotscience run: %s\n" % (run,))
+        print("Dotscience run:\n%s\n" % (run,))
 
         # NB: deploy=True implies build=True
         if build or deploy:
@@ -385,20 +393,20 @@ class Dotscience:
             image = self._build_docker_image_on_hub()
             ret["image"] = image
             print("done")
-            print("Docker image: %s\n" % (image,))
+            print("Docker image:\n%s\n" % (image,))
         if deploy:
             # - Deploy to Kubernetes
             print("Deploying to Kubernetes... ", end="")
             endpoint = self._deploy_to_kube()
             ret["endpoint"] = endpoint
             print("done")
-            print("Endpoint: %s\n" % (endpoint,))
+            print("Endpoint:\n%s\n" % (endpoint,))
             # - Set up Grafana dashboard
             print("Creating Grafana dashboard... ", end="")
             dashboard = self._setup_grafana()
             ret["dashboard"] = dashboard
             print("done")
-            print("Dashboard: %s\n" % (dashboard,))
+            print("Dashboard:\n%s\n" % (dashboard,))
         print("=====================================")
         return ret
 
@@ -551,8 +559,8 @@ class Dotscience:
         commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
         # TODO add timestamp?
 
-        import pprint
-        pprint.pprint(commit)
+        #import pprint
+        #pprint.pprint(commit)
 
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
@@ -587,17 +595,17 @@ class Dotscience:
 
 
     def _build_docker_image_on_hub(self):
-
+        """
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
-
 
         model = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={}).json()
         self._docker_image = model.image_name
 
         # TODO poll /v2/models/{model-id}/builds/{build-id} until built
+        """
 
-        #self._docker_image = "quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
+        self._docker_image = "quay.io/dotmesh/mnist-demo:latest" #"quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
         return self._docker_image
 
     def _deploy_to_kube(self):
@@ -627,20 +635,276 @@ class Dotscience:
             body["model_classes"] = classes_encoded.decode('ascii')
         except Exception as e:
             print("Unable to extract classes file (error = %s)" % (e,))
-        print("SENDING BODY")
-        import pprint
-        pprint.pprint(body)
+        #print("SENDING BODY")
+        #import pprint
+        #pprint.pprint(body)
         #import pdb; pdb.set_trace()
         #"model_classes": classes_encoded,
         deployment = requests.post(
             self._hostname+f"/v2/deployers/{deployer['id']}/deployments",
             json=body,
             auth=self._auth,
-	)
-        return deployment.json()["host"]
+        )
+        self._deployment = deployment.json()
+        return "https://"+deployment.json()["host"]
 
     def _setup_grafana(self):
-        pass
+        deployment_id = self._deployment["id"]
+
+        dashboard = {
+          "annotations": {
+            "list": [
+              {
+                "builtIn": 1,
+                "datasource": "-- Grafana --",
+                "enable": True,
+                "hide": True,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+              }
+            ]
+          },
+          "editable": True,
+          "gnetId": None,
+          "graphTooltip": 0,
+          # Create new dashboard (https://grafana.com/docs/http_api/dashboard/)
+          "id": None,
+          "links": [],
+          "panels": [
+            {
+              "aliasColors": {},
+              "bars": False,
+              "dashLength": 10,
+              "dashes": False,
+              "fill": 1,
+              "gridPos": {
+                "h": 9,
+                "w": 24,
+                "x": 0,
+                "y": 0
+              },
+              "id": 2,
+              "legend": {
+                "avg": False,
+                "current": False,
+                "max": False,
+                "min": False,
+                "show": True,
+                "total": False,
+                "values": False
+              },
+              "lines": True,
+              "linewidth": 1,
+              "links": [],
+              "NonePointMode": "None",
+              "paceLength": 10,
+              "percentage": False,
+              "pointradius": 2,
+              "points": False,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "stack": False,
+              "steppedLine": False,
+              "targets": [
+                {
+                  "expr": f"sum(rate(model_predictions{{deployment_id=\"{deployment_id}\"}}[1m])) by (class)",
+                  "format": "time_series",
+                  "intervalFactor": 1,
+                  "legendFormat": "{{class}}",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeFrom": None,
+              "timeRegions": [],
+              "timeShift": None,
+              "title": "Prediction rate (requests per minute)",
+              "tooltip": {
+                "shared": True,
+                "sort": 2,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "buckets": None,
+                "mode": "time",
+                "name": None,
+                "show": True,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "label": None,
+                  "logBase": 1,
+                  "max": None,
+                  "min": None,
+                  "show": True
+                },
+                {
+                  "format": "short",
+                  "label": None,
+                  "logBase": 1,
+                  "max": None,
+                  "min": None,
+                  "show": True
+                }
+              ],
+              "yaxis": {
+                "align": False,
+                "alignLevel": None
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": False,
+              "dashLength": 10,
+              "dashes": False,
+              "fill": 1,
+              "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 9
+              },
+              "id": 4,
+              "legend": {
+                "avg": False,
+                "current": False,
+                "max": False,
+                "min": False,
+                "show": True,
+                "total": False,
+                "values": False
+              },
+              "lines": True,
+              "linewidth": 1,
+              "links": [],
+              "NonePointMode": "None",
+              "paceLength": 10,
+              "percentage": False,
+              "pointradius": 2,
+              "points": False,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "stack": False,
+              "steppedLine": False,
+              "targets": [
+                {
+                  "expr": f"histogram_quantile(0.95, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) by (le)) * 1e3",
+                  "format": "time_series",
+                  "intervalFactor": 1,
+                  "legendFormat": "95th percentile",
+                  "refId": "A"
+                },
+                {
+                  "expr": f"histogram_quantile(0.5, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) by(le)) * 1e3",
+                  "format": "time_series",
+                  "intervalFactor": 1,
+                  "legendFormat": "median",
+                  "refId": "B"
+                },
+                {
+                  "expr": f"sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) / sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) * 1e3",
+                  "format": "time_series",
+                  "intervalFactor": 1,
+                  "legendFormat": "mean",
+                  "refId": "C"
+                }
+              ],
+              "thresholds": [],
+              "timeFrom": None,
+              "timeRegions": [],
+              "timeShift": None,
+              "title": "Latencies",
+              "tooltip": {
+                "shared": True,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "buckets": None,
+                "mode": "time",
+                "name": None,
+                "show": True,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "label": None,
+                  "logBase": 1,
+                  "max": None,
+                  "min": None,
+                  "show": True
+                },
+                {
+                  "format": "short",
+                  "label": None,
+                  "logBase": 1,
+                  "max": None,
+                  "min": None,
+                  "show": True
+                }
+              ],
+              "yaxis": {
+                "align": False,
+                "alignLevel": None
+              }
+            }
+          ],
+          "refresh": "5m",
+          "schemaVersion": 18,
+          "style": "dark",
+          "tags": [],
+          "templating": {
+            "list": []
+          },
+          "time": {
+            "from": "now-6h",
+            "to": "now"
+          },
+          "timepicker": {
+            "refresh_intervals": [
+              "5s",
+              "10s",
+              "30s",
+              "1m",
+              "5m",
+              "15m",
+              "30m",
+              "1h",
+              "2h",
+              "1d"
+            ],
+            "time_options": [
+              "5m",
+              "15m",
+              "1h",
+              "6h",
+              "12h",
+              "24h",
+              "2d",
+              "7d",
+              "30d"
+            ]
+          },
+          "timezone": "",
+          "title": f"Monitoring model {self._project_name.replace('-', '')}",
+          "uid": ''.join(random.choices(string.ascii_letters + string.digits, k=9)),
+          "version": 3
+        }
+        new_dashboard = requests.post(
+            self._grafana_hostname+"/api/dashboards/db",
+            auth=self._grafana_auth,
+            json=dict(dashboard=dashboard, folderId=0, overwrite=True),
+        )
+        # TODO check status code
+        self._dashboard = new_dashboard.json()
+        #print("new dashboard", self._dashboard)
+        return self._grafana_hostname+self._dashboard['url']
 
     # Proxy things through to the current run
     def start(self, description = None):
@@ -827,11 +1091,23 @@ def parameter(label, value):
 def debug():
     _defaultDS.debug()
 
-def connect(username, apikey, project, hostname=""):
+def connect(username, apikey, project, hostname="",
+            g_hostname="", g_username="", g_apikey=""):
     # Allow defaulting on empty string e.g. from env
     if not hostname:
         hostname = "https://cloud.dotscience.com"
-    _defaultDS.connect(username, apikey, project, hostname)
+    # g_ for grafana
+    if not g_hostname:
+        grafana = "https://playground-grafana.dotscience.com"
+    # default to same creds as dotscience cloud, but overridable for
+    # development
+    if not g_username and not g_apikey:
+        g_username = username
+        g_apikey = apikey
+    _defaultDS.connect(
+        username, apikey, project, hostname,
+        g_hostname, g_username, g_apikey,
+    )
 
 from ._version import get_versions
 __version__ = get_versions()['version']
