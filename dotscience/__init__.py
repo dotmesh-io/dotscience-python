@@ -366,9 +366,9 @@ class Dotscience:
         print("\n======== Dotscience publish ========\n")
         # - Upload output files via S3 API in a tar stream
         # TODO: maybe don't upload all output files, only ones tagged as model?
-       
+
         self._get_project_or_create(self._project_name, verbose=True)
-        
+
         print("Uploading output/model files", end="")
         self._upload_output_files()
         # - Craft the commit metadata for the run and call the Commit() API
@@ -413,7 +413,7 @@ class Dotscience:
     def _get_project_or_create(self, project_name, verbose=False):
         if self._cached_project:
             return self._cached_project
-        
+
         projects = requests.get(self._hostname+"/v2/projects", auth=self._auth)
         for project in projects.json():
             if project["name"] == project_name:
@@ -540,6 +540,7 @@ class Dotscience:
         commit["workload.type"] = "remote"
         commit["type"] = "dotscience.run.v1"
 
+        # TODO: insert run classes here
         run = self.currentRun.metadata()
 
         for k, v in flatten(run):
@@ -579,17 +580,34 @@ class Dotscience:
         if len(managed) == 0:
             raise Exception("Can't deploy - no managed deployers found")
         deployer = managed[0]
+        body = {
+            # TODO fill this in
+            "name": self._project_name.replace('-', ''),
+            "namespace": "default",
+            "image_name": self._docker_image,
+            "container_port": 8501,
+            "model_name": self._project_name.replace('-', ''), # XXX should this be the same as name?
+            "replicas": 1
+        }
+        try:
+            classes_file = json.loads(
+                list(self.currentRun.metadata()["labels"].values())[0],
+            )["files"]["classes"]
+            # XXX what if it's changed in between model() and this point in publish()?
+            import base64
+            classes_data = open(classes_file, 'rb').read()
+            classes_encoded = base64.b64encode(classes_data)
+            body["model_classes"] = classes_encoded.decode('ascii')
+        except Exception as e:
+            print("Unable to extract classes file (error = %s)" % (e,))
+        print("SENDING BODY")
+        import pprint
+        pprint.pprint(body)
+        #import pdb; pdb.set_trace()
+        #"model_classes": classes_encoded,
         deployment = requests.post(
             self._hostname+f"/v2/deployers/{deployer['id']}/deployments",
-            json={
-                # TODO fill this in
-                "name": self._project_name.replace('-', ''),
-                "namespace": "default",
-                "image_name": self._docker_image,
-                "container_port": 8501,
-                "model_name": self._project_name.replace('-', ''), # XXX should this be the same as name?
-                "replicas": 1
-            },
+            json=body,
             auth=self._auth,
 	)
         return deployment.json()["host"]
