@@ -598,7 +598,6 @@ class Dotscience:
 
     def _build_docker_image_on_hub(self):
 
-        """
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
 
@@ -606,9 +605,8 @@ class Dotscience:
         self._docker_image = model["image_name"]
 
         # TODO poll /v2/models/{model-id}/builds/{build-id} until built
-        """
 
-        self._docker_image = "quay.io/dotmesh/mnist-demo:latest" #"quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
+        #self._docker_image = "quay.io/dotmesh/mnist-demo:latest" #"quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
 
         return self._docker_image
 
