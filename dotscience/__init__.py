@@ -334,6 +334,7 @@ class Dotscience:
         # impossible to distinguish different runs by ID.
         self.currentRun.newID()
 
+        ret = None
         if self._mode == "remote":
             # In remote mode, we need to push output files (i.e. models) to the
             # remote dotscience hub via the S3 api, then construct the run
@@ -548,6 +549,9 @@ class Dotscience:
         # TODO the following might not work well from jupyter
         commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
         # TODO add timestamp?
+
+        import pprint
+        pprint.pprint(commit)
 
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
