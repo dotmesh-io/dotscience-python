@@ -672,6 +672,10 @@ class Dotscience:
         self._check_started()
         self.currentRun.add_parameter(label, value)
 
+    def model(self, kind, name, *args, **kwargs):
+        self._check_started()
+        return self.currentRun.model(kind, name, *args, **kwargs)
+
     def add_parameters(self, *args, **kwargs):
         self._check_started()
         self.currentRun.add_parameters(*args, **kwargs)
@@ -755,12 +759,12 @@ def add_summaries(*args, **kwargs):
 def summary(label, value):
     return _defaultDS.summary(label, value)
 
-def model(self, kind, name, *args, **kwargs):
-    return _defaultDS.model(kind, name, *args, **kwargs)
-
 add_metric = add_summary
 add_metrics = add_summaries
 metric = summary
+
+def model(kind, name, *args, **kwargs):
+    return _defaultDS.model(kind, name, *args, **kwargs)
 
 def add_parameter(label, value):
     _defaultDS.add_parameter(label, value)
