@@ -526,6 +526,8 @@ class Dotscience:
                     continue
                 if k == "output":
                     k = "output-files"
+                if k == "labels":
+                    k = "label"
                 if isinstance(v, dict):
                     for kk, vv in flatten(v):
                         yield k+"."+kk, vv
@@ -559,8 +561,8 @@ class Dotscience:
         commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
         # TODO add timestamp?
 
-        #import pprint
-        #pprint.pprint(commit)
+        import pprint
+        pprint.pprint(commit)
 
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
@@ -595,17 +597,19 @@ class Dotscience:
 
 
     def _build_docker_image_on_hub(self):
+
         """
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
 
         model = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={}).json()
-        self._docker_image = model.image_name
+        self._docker_image = model["image_name"]
 
         # TODO poll /v2/models/{model-id}/builds/{build-id} until built
         """
 
         self._docker_image = "quay.io/dotmesh/mnist-demo:latest" #"quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
+
         return self._docker_image
 
     def _deploy_to_kube(self):
@@ -634,7 +638,7 @@ class Dotscience:
             classes_encoded = base64.b64encode(classes_data)
             body["model_classes"] = classes_encoded.decode('ascii')
         except Exception as e:
-            print("Unable to extract classes file (error = %s)" % (e,))
+            print("Unable to extract classes file (error = %s), continuing regardless (try passing classes=\"classes.json\" to ds.model, where classes.json contains a single map from class ids (strings) to human readable classnames..." % (e,))
         #print("SENDING BODY")
         #import pprint
         #pprint.pprint(body)
