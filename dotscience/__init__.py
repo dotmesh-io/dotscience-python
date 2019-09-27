@@ -563,14 +563,41 @@ class Dotscience:
         runURL = f"{self._hostname}/project/{project['id']}/runs/summary/{self.currentRun._id}"
         return runURL
 
+    def _find_model_id(self, run_id):
+        attempt = 0
+        while attempt < 10:
+            attempt += 1
+            # TODO: maybe retry for a bit, as presumably populating the model lib
+            # from the commit is async
+            # TODO: replace with a query arg in the backend to avoid iterating
+
+            models = requests.get(self._hostname+"/v2/models", auth=self._auth).json()
+            model_id = None
+            for model in models:
+                if model["run_id"] == self.currentRun._id:
+                    # found it!
+                    model_id = model["id"]
+                    return model_id
+            if model_id is None:
+                print("Unable to find model with run id %r yet... (models=%s)" % (self.currentRun._id, models))
+                print("Trying again in 1 second")
+                time.sleep(1.0)
+
+        raise Exception("Unable to find model with run id %s after 10 tries" % (run_id,))
+
+
     def _build_docker_image_on_hub(self):
 
-        # TODO find model id
+        # find model id
+        model_id = self._find_model_id(self.currentRun._id)
 
 
-        #deployers = requests.(self._hostname+"/v2/deployers", auth=self._auth).json()
-        # TODO: call an API that builds a docker image from a model we just uploaded.
-        self._docker_image = "quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
+        model = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={}).json()
+        self._docker_image = model.image_name
+
+        # TODO poll /v2/models/{model-id}/builds/{build-id} until built
+
+        #self._docker_image = "quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
         return self._docker_image
 
     def _deploy_to_kube(self):
