@@ -661,6 +661,7 @@ class Dotscience:
                 resp = requests.get("https://"+self._deployment["host"]+"/v1/models/model")
                 if resp.status_code != 200:
                     raise Exception("status code %s" % (resp.status_code,))
+                return
             except Exception as e:
                 print(".", end="")
                 sys.stdout.flush()
