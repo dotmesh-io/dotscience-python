@@ -663,6 +663,7 @@ class Dotscience:
                     raise Exception("status code %s" % (resp.status_code,))
             except:
                 print(".", end="")
+                time.sleep(1.0)
             if attempt == 60:
                 print("\nSeems to be taking a long time, waiting one more minute")
         raise Exception("Failed to contact model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!")
