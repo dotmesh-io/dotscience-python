@@ -658,7 +658,7 @@ class Dotscience:
         while attempt < 120:
             attempt += 1
             try:
-                resp = request.get("https://"+self._deployment["host"]+"/v1/models/model")
+                resp = requests.get("https://"+self._deployment["host"]+"/v1/models/model")
                 if resp.status_code != 200:
                     raise Exception("status code %s" % (resp.status_code,))
             except Exception as e:
