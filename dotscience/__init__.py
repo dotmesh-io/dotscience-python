@@ -564,8 +564,8 @@ class Dotscience:
         commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
         # TODO add timestamp?
 
-        import pprint
-        pprint.pprint(commit)
+        #import pprint
+        #pprint.pprint(commit)
 
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
