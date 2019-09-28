@@ -1100,7 +1100,7 @@ def connect(username, apikey, project, hostname="",
         hostname = "https://cloud.dotscience.com"
     # g_ for grafana
     if not g_hostname:
-        grafana = "https://playground-grafana.dotscience.com"
+        g_hostname = "https://playground-grafana.dotscience.com"
     # default to same creds as dotscience cloud, but overridable for
     # development
     if not g_username and not g_apikey:
