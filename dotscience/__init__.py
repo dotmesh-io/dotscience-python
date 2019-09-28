@@ -663,6 +663,7 @@ class Dotscience:
                     raise Exception("status code %s" % (resp.status_code,))
             except:
                 print(".", end="")
+                sys.stdout.flush()
                 time.sleep(1.0)
             if attempt == 60:
                 print("\nSeems to be taking a long time, waiting one more minute")
