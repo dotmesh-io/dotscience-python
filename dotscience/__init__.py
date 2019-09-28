@@ -604,7 +604,11 @@ class Dotscience:
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
 
-        model = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={}).json()
+        resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
+        if resp.status_code != 200:
+            raise Exception(f"Error {resp.status_code} on POST to /v2/models/{model_id}/builds: {resp.content}")
+
+        model = resp.json()
         self._docker_image = model["image_name"]
 
         # TODO poll /v2/models/{model-id}/builds/{build-id} until built
