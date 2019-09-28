@@ -1074,11 +1074,6 @@ def add_summaries(*args, **kwargs):
 def summary(label, value):
     return _defaultDS.summary(label, value)
 
-add_metric = add_summary
-add_metrics = add_summaries
-metric = summary
-param = parameter
-
 def model(kind, name, *args, **kwargs):
     return _defaultDS.model(kind, name, *args, **kwargs)
 
@@ -1090,6 +1085,11 @@ def add_parameters(*args, **kwargs):
 
 def parameter(label, value):
     return _defaultDS.parameter(label, value)
+
+add_metric = add_summary
+add_metrics = add_summaries
+metric = summary
+param = parameter
 
 def debug():
     _defaultDS.debug()
