@@ -407,6 +407,9 @@ class Dotscience:
             ret["dashboard"] = dashboard
             print("done")
             print("Dashboard:\n%s\n" % (dashboard,))
+            print("Waiting for model endpoint to become active", end="")
+            self._wait_active()
+            print(" done")
         print("=====================================")
         return ret
 
@@ -649,6 +652,20 @@ class Dotscience:
         )
         self._deployment = deployment.json()
         return "https://"+deployment.json()["host"]+"/v1/models/model:predict"
+
+    def _wait_active(self):
+        attempt = 0
+        while attempt < 120:
+            try:
+                resp = request.get("https://"+self._deployment.json()["host"]+"/v1/models/model")
+                if resp.status_code != 200:
+                    raise Exception("status code %s" % (resp.status_code,))
+            except:
+                print(".", end="")
+            if attempt == 60:
+                print("\nSeems to be taking a long time, waiting one more minute")
+        raise Exception("Failed to contact model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!")
+
 
     def _setup_grafana(self):
         deployment_id = self._deployment["id"]
