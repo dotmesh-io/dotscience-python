@@ -605,7 +605,7 @@ class Dotscience:
         model_id = self._find_model_id(self.currentRun._id)
 
         resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
-        if resp.status_code != 200:
+        if resp.status_code != 201:
             raise Exception(f"Error {resp.status_code} on POST to /v2/models/{model_id}/builds: {resp.content}")
 
         model = resp.json()
