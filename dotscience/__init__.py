@@ -710,7 +710,7 @@ class Dotscience:
               "steppedLine": False,
               "targets": [
                 {
-                  "expr": f"sum(rate(model_predictions{{deployment_id=\"{deployment_id}\"}}[5m])) by (class)",
+                  "expr": f"sum(rate(model_predictions{{deployment_id=\"{deployment_id}\"}}[1m])) by (class)",
                   "format": "time_series",
                   "intervalFactor": 1,
                   "legendFormat": "{{class}}",
@@ -794,21 +794,21 @@ class Dotscience:
               "steppedLine": False,
               "targets": [
                 {
-                  "expr": f"histogram_quantile(0.95, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) by (le)) * 1e3",
+                  "expr": f"histogram_quantile(0.95, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[1m])) by (le)) * 1e3",
                   "format": "time_series",
                   "intervalFactor": 1,
                   "legendFormat": "95th percentile",
                   "refId": "A"
                 },
                 {
-                  "expr": f"histogram_quantile(0.5, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) by(le)) * 1e3",
+                  "expr": f"histogram_quantile(0.5, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[1m])) by(le)) * 1e3",
                   "format": "time_series",
                   "intervalFactor": 1,
                   "legendFormat": "median",
                   "refId": "B"
                 },
                 {
-                  "expr": f"sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) / sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) * 1e3",
+                  "expr": f"sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[1m])) / sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) * 1e3",
                   "format": "time_series",
                   "intervalFactor": 1,
                   "legendFormat": "mean",
@@ -857,7 +857,7 @@ class Dotscience:
               }
             }
           ],
-          "refresh": "5m",
+          "refresh": "5s",
           "schemaVersion": 18,
           "style": "dark",
           "tags": [],
@@ -865,7 +865,7 @@ class Dotscience:
             "list": []
           },
           "time": {
-            "from": "now-6h",
+            "from": "now-5m",
             "to": "now"
           },
           "timepicker": {
