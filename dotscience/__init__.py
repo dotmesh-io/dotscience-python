@@ -648,7 +648,7 @@ class Dotscience:
             auth=self._auth,
         )
         self._deployment = deployment.json()
-        return "https://"+deployment.json()["host"]
+        return "https://"+deployment.json()["host"]+"/v1/models/model:predict"
 
     def _setup_grafana(self):
         deployment_id = self._deployment["id"]
