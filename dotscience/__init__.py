@@ -661,9 +661,10 @@ class Dotscience:
                 resp = request.get("https://"+self._deployment["host"]+"/v1/models/model")
                 if resp.status_code != 200:
                     raise Exception("status code %s" % (resp.status_code,))
-            except:
+            except Exception as e:
                 print(".", end="")
                 sys.stdout.flush()
+                print(e)
                 time.sleep(1.0)
             if attempt == 60:
                 print("\nSeems to be taking a long time, waiting one more minute")
