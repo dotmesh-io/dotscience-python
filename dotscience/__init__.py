@@ -656,6 +656,7 @@ class Dotscience:
     def _wait_active(self):
         attempt = 0
         while attempt < 120:
+            attempt += 1
             try:
                 resp = request.get("https://"+self._deployment.json()["host"]+"/v1/models/model")
                 if resp.status_code != 200:
