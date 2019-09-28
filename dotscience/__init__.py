@@ -410,7 +410,7 @@ class Dotscience:
             print("Waiting for model endpoint to become active", end="")
             self._wait_active()
             print(" done")
-        print("=====================================")
+        print("\n======== Dotscience complete =======\n")
         return ret
 
     def _upload_output_files(self):
