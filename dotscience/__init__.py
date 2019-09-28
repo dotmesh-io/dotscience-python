@@ -1104,8 +1104,8 @@ def connect(username, apikey, project, hostname="",
     # default to same creds as dotscience cloud, but overridable for
     # development
     if not g_username and not g_apikey:
-        g_username = username
-        g_apikey = apikey
+        g_username = "playground"
+        g_apikey = "password"
     _defaultDS.connect(
         username, apikey, project, hostname,
         g_hostname, g_username, g_apikey,
