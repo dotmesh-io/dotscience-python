@@ -710,7 +710,7 @@ class Dotscience:
               "steppedLine": False,
               "targets": [
                 {
-                  "expr": f"sum(rate(model_predictions{{deployment_id=\"{deployment_id}\"}}[1m])) by (class)",
+                  "expr": f"sum(rate(model_predictions{{deployment_id=\"{deployment_id}\"}}[5m])) by (class)",
                   "format": "time_series",
                   "intervalFactor": 1,
                   "legendFormat": "{{class}}",
