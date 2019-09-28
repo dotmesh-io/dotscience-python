@@ -655,6 +655,7 @@ class Dotscience:
 
     def _wait_active(self):
         attempt = 0
+        the_exc = None
         while attempt < 120:
             attempt += 1
             try:
@@ -663,16 +664,19 @@ class Dotscience:
                     raise Exception("status code %s" % (resp.status_code,))
                 return
             except Exception as e:
+                the_exc = e
                 print(".", end="")
                 sys.stdout.flush()
-                print(e)
                 time.sleep(1.0)
             if attempt == 60:
                 print("\nSeems to be taking a long time, waiting one more minute")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
         print("Failed to contact model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!\n")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        raise e
+        if the_exc != None:
+            raise the_exc
+        else:
+            raise Exception("Unable to load error")
 
 
     def _setup_grafana(self):
