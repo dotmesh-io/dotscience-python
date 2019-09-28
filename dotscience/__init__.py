@@ -1077,6 +1077,7 @@ def summary(label, value):
 add_metric = add_summary
 add_metrics = add_summaries
 metric = summary
+param = parameter
 
 def model(kind, name, *args, **kwargs):
     return _defaultDS.model(kind, name, *args, **kwargs)
