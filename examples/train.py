@@ -6,11 +6,7 @@ import os
 ds.connect(
     os.getenv("DOTSCIENCE_USERNAME"), 
     os.getenv("DOTSCIENCE_APIKEY"), 
-    os.getenv("DOTSCIENCE_PROJECT_NAME"), 
-    os.getenv("DOTSCIENCE_HOSTNAME"), 
-    os.getenv("GRAFANA_HOSTNAME"),
-    os.getenv("GRAFANA_USERNAME"),
-    os.getenv("GRAFANA_PASSWORD"),
+    os.getenv("DOTSCIENCE_PROJECT_NAME"),
 )
 
 import tensorflow as tf
@@ -24,15 +20,15 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 batch_size = ds.parameter("batch_size", 128)
 num_classes = ds.parameter("num_classes", 10)
-epochs = ds.parameter("epochs", 1)
+epochs = ds.parameter("epochs", 5)
 
 # input image dimensions
 img_rows, img_cols = 28, 28
 
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train = x_train[:100]
-y_train = y_train[:100]
+#x_train = x_train[:100]
+#y_train = y_train[:100]
 
 if K.image_data_format() == 'channels_first':
     x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
