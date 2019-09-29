@@ -390,6 +390,7 @@ class Dotscience:
         if build or deploy:
             # - Build
             print("Building docker image...", end="")
+            sys.stdout.flush()
             image = self._build_docker_image_on_hub()
             ret["image"] = image
             print(" done")
@@ -397,17 +398,20 @@ class Dotscience:
         if deploy:
             # - Deploy to Kubernetes
             print("Deploying to Kubernetes... ", end="")
+            sys.stdout.flush()
             endpoint = self._deploy_to_kube()
             ret["endpoint"] = endpoint
             print("done")
             print("Endpoint:\n%s\n" % (endpoint,))
             # - Set up Grafana dashboard
             print("Creating Grafana dashboard... ", end="")
+            sys.stdout.flush()
             dashboard = self._setup_grafana()
             ret["dashboard"] = dashboard
             print("done")
             print("Dashboard:\n%s\n" % (dashboard,))
             print("Waiting for model endpoint to become active", end="")
+            sys.stdout.flush()
             self._wait_active()
             print(" done")
         print("\n======== Dotscience complete =======\n")
