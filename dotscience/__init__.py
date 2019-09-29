@@ -371,50 +371,50 @@ class Dotscience:
 
     def _publish_remote_run(self, build, deploy):
         ret = {}
-        print("\n======== Dotscience publish ========\n")
+        print("\n=== 📝 Dotscience publish 📝 ===\n")
         # - Upload output files via S3 API in a tar stream
         # TODO: maybe don't upload all output files, only ones tagged as model?
 
         self._get_project_or_create(self._project_name, verbose=True)
 
-        print("Uploading output/model files", end="")
+        print("📦 Uploading output/model files", end="")
         self._upload_output_files()
         # - Craft the commit metadata for the run and call the Commit() API
         #   directly on dotmesh on the hub
         run = self._commit_run_on_hub()
         ret["run"] = ret
         print(" done")
-        print("Dotscience run:\n%s\n" % (run,))
+        print("--> Dotscience run: %s\n" % (run,))
 
         # NB: deploy=True implies build=True
         if build or deploy:
             # - Build
-            print("Building docker image...", end="")
+            print("🐳 Building docker image...", end="")
             sys.stdout.flush()
             image = self._build_docker_image_on_hub()
             ret["image"] = image
             print(" done")
-            print("Docker image:\n%s\n" % (image,))
+            print("--> Docker image: %s\n" % (image,))
         if deploy:
             # - Deploy to Kubernetes
-            print("Deploying to Kubernetes... ", end="")
+            print("🚚 Deploying to Kubernetes... ", end="")
             sys.stdout.flush()
             endpoint = self._deploy_to_kube()
             ret["endpoint"] = endpoint
             print("done")
             print("Endpoint:\n%s\n" % (endpoint,))
             # - Set up Grafana dashboard
-            print("Creating Grafana dashboard... ", end="")
+            print("📈 Creating Grafana dashboard... ", end="")
             sys.stdout.flush()
             dashboard = self._setup_grafana()
             ret["dashboard"] = dashboard
             print("done")
-            print("Dashboard:\n%s\n" % (dashboard,))
+            print("--> Dashboard:\n%s\n" % (dashboard,))
             print("Waiting for model endpoint to become active", end="")
             sys.stdout.flush()
             self._wait_active()
             print(" done")
-        print("\n======== Dotscience complete =======\n")
+        print("\n=== Dotscience publish complete 🎉 ===\n")
         return ret
 
     def _upload_output_files(self):
