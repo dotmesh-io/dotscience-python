@@ -602,6 +602,7 @@ class Dotscience:
         attempt = 0
         the_exc = None
         while attempt < 120:
+            attempt += 1
             try:
                 resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
                 if resp.status_code != 201:
