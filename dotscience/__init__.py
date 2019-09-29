@@ -646,8 +646,6 @@ class Dotscience:
                 build = resp.json()
                 if build["status"] != "completed":
                     raise Exception(f"build not complete: {build}")
-                import pprint
-                pprint.pprint(build)
                 return self._docker_image
             except Exception as e:
                 the_exc = e
