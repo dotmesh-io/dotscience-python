@@ -641,7 +641,7 @@ class Dotscience:
             attempt += 1
             try:
                 resp = requests.get(self._hostname+f"/v2/models/{model_id}/builds/{build['id']}", auth=self._auth)
-                if resp.status_code != 201:
+                if resp.status_code != 200:
                     raise Exception(f"Error {resp.status_code} on GET to /v2/models/{model_id}/builds/{build['id']}: {resp.content}")
                 build = resp.json()
                 import pprint
