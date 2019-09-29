@@ -389,10 +389,10 @@ class Dotscience:
         # NB: deploy=True implies build=True
         if build or deploy:
             # - Build
-            print("Building docker image... ", end="")
+            print("Building docker image...", end="")
             image = self._build_docker_image_on_hub()
             ret["image"] = image
-            print("done")
+            print(" done")
             print("Docker image:\n%s\n" % (image,))
         if deploy:
             # - Deploy to Kubernetes
@@ -607,8 +607,8 @@ class Dotscience:
                 resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
                 if resp.status_code != 201:
                     raise Exception(f"Error {resp.status_code} on POST to /v2/models/{model_id}/builds: {resp.content}")
-                model = resp.json()
-                return model
+                build = resp.json()
+                return build
             except Exception as e:
                 the_exc = e
                 print(".", end="")
@@ -618,7 +618,7 @@ class Dotscience:
                 print("\nSeems to be taking a long time, waiting one more minute")
         
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-        print("Failed to contact model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!\n")
+        print("Failed to start building model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!\n")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         if the_exc != None:
             raise the_exc
@@ -631,9 +631,37 @@ class Dotscience:
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
 
-        model = self._initiate_build(model_id)
+        build = self._initiate_build(model_id)
 
-        self._docker_image = model["image_name"]
+        self._docker_image = build["image_name"]
+
+        attempt = 0
+        the_exc = None
+        while attempt < 120:
+            attempt += 1
+            try:
+                resp = requests.get(self._hostname+f"/v2/models/{model_id}/builds/{build['id']}", auth=self._auth)
+                if resp.status_code != 201:
+                    raise Exception(f"Error {resp.status_code} on GET to /v2/models/{model_id}/builds/{build['id']}: {resp.content}")
+                build = resp.json()
+                import pprint
+                pprint.pprint(build)
+                return self._docker_image
+            except Exception as e:
+                the_exc = e
+                print(".", end="")
+                sys.stdout.flush()
+                time.sleep(1.0)
+            if attempt == 60:
+                print("\nSeems to be taking a long time, waiting one more minute")
+
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+        print("Failed to build model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!\n")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        if the_exc != None:
+            raise the_exc
+        else:
+            raise Exception("Unable to load error")
 
         # TODO poll /v2/models/{model-id}/builds/{build-id} until built
 
