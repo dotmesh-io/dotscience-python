@@ -598,17 +598,40 @@ class Dotscience:
 
         raise Exception("Unable to find model with run id %s after 10 tries" % (run_id,))
 
+    def _initiate_build(self, model_id):
+        attempt = 0
+        the_exc = None
+        while attempt < 120:
+            try:
+                resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
+                if resp.status_code != 201:
+                    raise Exception(f"Error {resp.status_code} on POST to /v2/models/{model_id}/builds: {resp.content}")
+                model = resp.json()
+                return model
+            except Exception as e:
+                the_exc = e
+                print(".", end="")
+                sys.stdout.flush()
+                time.sleep(1.0)
+            if attempt == 60:
+                print("\nSeems to be taking a long time, waiting one more minute")
+        
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+        print("Failed to contact model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!\n")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        if the_exc != None:
+            raise the_exc
+        else:
+            raise Exception("Unable to load error")
+
 
     def _build_docker_image_on_hub(self):
 
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
 
-        resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
-        if resp.status_code != 201:
-            raise Exception(f"Error {resp.status_code} on POST to /v2/models/{model_id}/builds: {resp.content}")
+        model = self._initiate_build(model_id)
 
-        model = resp.json()
         self._docker_image = model["image_name"]
 
         # TODO poll /v2/models/{model-id}/builds/{build-id} until built
