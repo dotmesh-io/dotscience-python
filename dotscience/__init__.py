@@ -644,7 +644,7 @@ class Dotscience:
                 if resp.status_code != 200:
                     raise Exception(f"Error {resp.status_code} on GET to /v2/models/{model_id}/builds/{build['id']}: {resp.content}")
                 build = resp.json()
-                if build["status"] != "complete":
+                if build["status"] != "completed":
                     raise Exception(f"build not complete: {build}")
                 import pprint
                 pprint.pprint(build)
