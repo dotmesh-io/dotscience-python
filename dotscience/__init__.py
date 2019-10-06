@@ -629,7 +629,7 @@ class Dotscience:
                 time.sleep(1.0)
             if attempt == 60:
                 print("\nSeems to be taking a long time, waiting one more minute")
-        
+
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
         print("Failed to start building model within 2 minutes, please let us know using the Intercom button bottom right, or email support@dotscience.com so that we can fix it with your help - thanks!\n")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -665,6 +665,8 @@ class Dotscience:
                 print(".", end="")
                 sys.stdout.flush()
                 time.sleep(1.0)
+            if build is not None and build["status"] == "failed":
+                raise Exception("Build failed: %s", build)
             if attempt == 60:
                 print("\nSeems to be taking a long time, waiting one more minute")
 
