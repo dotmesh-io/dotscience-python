@@ -7,6 +7,7 @@ ds.connect(
     os.getenv("DOTSCIENCE_USERNAME"), 
     os.getenv("DOTSCIENCE_APIKEY"), 
     os.getenv("DOTSCIENCE_PROJECT_NAME"),
+    os.getenv("DOTSCIENCE_HOSTNAME")
 )
 
 import tensorflow as tf
@@ -20,7 +21,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 batch_size = ds.parameter("batch_size", 128)
 num_classes = ds.parameter("num_classes", 10)
-epochs = ds.parameter("epochs", 5)
+epochs = ds.parameter("epochs", 1)
 
 # input image dimensions
 img_rows, img_cols = 28, 28

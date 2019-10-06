@@ -465,7 +465,14 @@ class Dotscience:
                 userAndPass = b64encode((f"{self._auth[0]}:{self._auth[1]}").encode("ascii")).decode("ascii")
                 headers = { 'Authorization' : 'Basic %s' %  userAndPass }
 
-                conn = http.client.HTTPSConnection(self._hostname.split("://")[1])
+                scheme, hostname = self._hostname.split("://")
+                if scheme == "http":
+                    conn = http.client.HTTPConnection(hostname)
+                elif scheme == "https":
+                    conn = http.client.HTTPSConnection(hostname)
+                else:
+                    raise Exception("Unsupported scheme %s", scheme)
+
                 try:
                     R = conn.request(
                         "PUT",
@@ -790,7 +797,7 @@ class Dotscience:
               "lines": True,
               "linewidth": 1,
               "links": [],
-              "NonePointMode": "None",
+              "nullPointMode": "None",
               "paceLength": 10,
               "percentage": False,
               "pointradius": 2,
@@ -874,7 +881,7 @@ class Dotscience:
               "lines": True,
               "linewidth": 1,
               "links": [],
-              "NonePointMode": "None",
+              "nullPointMode": "None",
               "paceLength": 10,
               "percentage": False,
               "pointradius": 2,
