@@ -257,13 +257,13 @@ class Dotscience:
         self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
         self._dotmesh_client = None
         self._hostname = None
-        self._grafana_hostname = None
-        self._grafana_auth = None
         self._auth = None
         self._cached_project = None
         self._project_name = None
+        self._deployment = None
+        self._deployer = None
 
-    def connect(self, username, apikey, project, hostname, g_hostname, g_username, g_apikey):
+    def connect(self, username, apikey, project, hostname):
         # TODO: Make this fail if we're in a mode other than 'remote' mode.
         # TODO: make publish etc fail if we're not connected in remote mode.
         if not project:
@@ -274,9 +274,6 @@ class Dotscience:
             api_key=apikey
         )
         self._hostname = hostname
-
-        self._grafana_hostname = g_hostname
-        self._grafana_auth = (g_username, g_apikey)
 
         self._auth = (username, apikey)
         self._project_name = project
@@ -410,12 +407,12 @@ class Dotscience:
             ret["dashboard"] = dashboard
             print("done")
             print("   -> Dashboard: %s\n" % (dashboard,))
-            
+
             print("Waiting for model endpoint to become active", end="")
             sys.stdout.flush()
             self._wait_active()
             print(" done")
-            
+
         print("=== Dotscience publish complete ===\n")
         return ret
 
@@ -665,6 +662,8 @@ class Dotscience:
                 print(".", end="")
                 sys.stdout.flush()
                 time.sleep(1.0)
+            if build is not None:
+                print("BUILD:", build)
             if build is not None and build["status"] == "failed":
                 raise Exception("Build failed: %s", build)
             if attempt == 60:
@@ -691,6 +690,7 @@ class Dotscience:
         if len(managed) == 0:
             raise Exception("Can't deploy - no managed deployers found")
         deployer = managed[0]
+        self._deployer = deployer
         body = {
             # TODO fill this in
             "name": self._project_name.replace('-', ''),
@@ -725,6 +725,8 @@ class Dotscience:
         return "https://"+deployment.json()["host"]+"/v1/models/model:predict"
 
     def _wait_active(self):
+        if self._deployment is None:
+            raise Exception("tried to wait for model to become active when no self._deployment was set")
         attempt = 0
         the_exc = None
         while attempt < 120:
@@ -749,264 +751,22 @@ class Dotscience:
         else:
             raise Exception("Unable to load error")
 
-
     def _setup_grafana(self):
+        if self._deployment is None:
+            raise Exception("tried to set up dashboard when no self._deployment was set")
+        if self._deployer is None:
+            raise Exception("tried to set up dashboard when no self._deployer was set")
+        deployer_id = self._deployer["id"]
         deployment_id = self._deployment["id"]
-
-        dashboard = {
-          "annotations": {
-            "list": [
-              {
-                "builtIn": 1,
-                "datasource": "-- Grafana --",
-                "enable": True,
-                "hide": True,
-                "iconColor": "rgba(0, 211, 255, 1)",
-                "name": "Annotations & Alerts",
-                "type": "dashboard"
-              }
-            ]
-          },
-          "editable": True,
-          "gnetId": None,
-          "graphTooltip": 0,
-          # Create new dashboard (https://grafana.com/docs/http_api/dashboard/)
-          "id": None,
-          "links": [],
-          "panels": [
-            {
-              "aliasColors": {},
-              "bars": False,
-              "dashLength": 10,
-              "dashes": False,
-              "fill": 1,
-              "gridPos": {
-                "h": 9,
-                "w": 24,
-                "x": 0,
-                "y": 0
-              },
-              "id": 2,
-              "legend": {
-                "avg": False,
-                "current": False,
-                "max": False,
-                "min": False,
-                "show": True,
-                "total": False,
-                "values": False
-              },
-              "lines": True,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "None",
-              "paceLength": 10,
-              "percentage": False,
-              "pointradius": 2,
-              "points": False,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "stack": False,
-              "steppedLine": False,
-              "targets": [
-                {
-                  "expr": f"sum(rate(model_predictions{{deployment_id=\"{deployment_id}\"}}[1m])) by (class)",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "{{class}}",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": None,
-              "timeRegions": [],
-              "timeShift": None,
-              "title": "Prediction rate (requests per minute)",
-              "tooltip": {
-                "shared": True,
-                "sort": 2,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": None,
-                "mode": "time",
-                "name": None,
-                "show": True,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": None,
-                  "logBase": 1,
-                  "max": None,
-                  "min": None,
-                  "show": True
-                },
-                {
-                  "format": "short",
-                  "label": None,
-                  "logBase": 1,
-                  "max": None,
-                  "min": None,
-                  "show": True
-                }
-              ],
-              "yaxis": {
-                "align": False,
-                "alignLevel": None
-              }
-            },
-            {
-              "aliasColors": {},
-              "bars": False,
-              "dashLength": 10,
-              "dashes": False,
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 24,
-                "x": 0,
-                "y": 9
-              },
-              "id": 4,
-              "legend": {
-                "avg": False,
-                "current": False,
-                "max": False,
-                "min": False,
-                "show": True,
-                "total": False,
-                "values": False
-              },
-              "lines": True,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "None",
-              "paceLength": 10,
-              "percentage": False,
-              "pointradius": 2,
-              "points": False,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "stack": False,
-              "steppedLine": False,
-              "targets": [
-                {
-                  "expr": f"histogram_quantile(0.95, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[1m])) by (le)) * 1e3",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "95th percentile",
-                  "refId": "A"
-                },
-                {
-                  "expr": f"histogram_quantile(0.5, sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[1m])) by(le)) * 1e3",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "median",
-                  "refId": "B"
-                },
-                {
-                  "expr": f"sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[1m])) / sum(rate(interceptor_request_duration_milliseconds_bucket{{deployment_id=\"{deployment_id}\"}}[5m])) * 1e3",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "mean",
-                  "refId": "C"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": None,
-              "timeRegions": [],
-              "timeShift": None,
-              "title": "Latencies",
-              "tooltip": {
-                "shared": True,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": None,
-                "mode": "time",
-                "name": None,
-                "show": True,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": None,
-                  "logBase": 1,
-                  "max": None,
-                  "min": None,
-                  "show": True
-                },
-                {
-                  "format": "short",
-                  "label": None,
-                  "logBase": 1,
-                  "max": None,
-                  "min": None,
-                  "show": True
-                }
-              ],
-              "yaxis": {
-                "align": False,
-                "alignLevel": None
-              }
-            }
-          ],
-          "refresh": "5s",
-          "schemaVersion": 18,
-          "style": "dark",
-          "tags": [],
-          "templating": {
-            "list": []
-          },
-          "time": {
-            "from": "now-5m",
-            "to": "now"
-          },
-          "timepicker": {
-            "refresh_intervals": [
-              "5s",
-              "10s",
-              "30s",
-              "1m",
-              "5m",
-              "15m",
-              "30m",
-              "1h",
-              "2h",
-              "1d"
-            ],
-            "time_options": [
-              "5m",
-              "15m",
-              "1h",
-              "6h",
-              "12h",
-              "24h",
-              "2d",
-              "7d",
-              "30d"
-            ]
-          },
-          "timezone": "",
-          "title": f"Monitoring model {self._project_name.replace('-', '')}",
-          "uid": ''.join(random.choices(string.ascii_letters + string.digits, k=9)),
-          "version": 3
-        }
-        new_dashboard = requests.post(
-            self._grafana_hostname+"/api/dashboards/db",
-            auth=self._grafana_auth,
-            json=dict(dashboard=dashboard, folderId=0, overwrite=True),
+        grafana = requests.post(
+            # "/v2/deployers/{id}/deployments/{deploymentId}/dashboard"
+            self._hostname+f"/v2/deployers/{deployer_id}/deployments/{deployment_id}/dashboard",
+            json={},
+            auth=self._auth,
         )
         # TODO check status code
-        self._dashboard = new_dashboard.json()
-        #print("new dashboard", self._dashboard)
-        return self._grafana_hostname+self._dashboard['url']
+        dashboard = grafana.json()
+        return dashboard['dashboardURL']
 
     # Proxy things through to the current run
     def start(self, description = None):
@@ -1194,22 +954,12 @@ param = parameter
 def debug():
     _defaultDS.debug()
 
-def connect(username, apikey, project, hostname="",
-            g_hostname="", g_username="", g_apikey=""):
+def connect(username, apikey, project, hostname=""):
     # Allow defaulting on empty string e.g. from env
     if not hostname:
         hostname = "https://cloud.dotscience.com"
-    # g_ for grafana
-    if not g_hostname:
-        g_hostname = "https://playground-grafana.dotscience.com"
-    # default to same creds as dotscience cloud, but overridable for
-    # development
-    if not g_username and not g_apikey:
-        g_username = "playground"
-        g_apikey = "password"
     _defaultDS.connect(
         username, apikey, project, hostname,
-        g_hostname, g_username, g_apikey,
     )
 
 from ._version import get_versions
