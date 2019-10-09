@@ -445,10 +445,6 @@ class Dotscience:
     def _upload(self, filename):
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
-        #upload = requests.put(
-        #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
-        #    data=open(filename, 'rb').read(),
-        #)
         attempt = 0
         while attempt < 10:
             attempt += 1
@@ -574,9 +570,6 @@ class Dotscience:
         commit[f"run.{self.currentRun._id}.workload-file"] = sys.argv[0]
         # TODO add timestamp?
 
-        #import pprint
-        #pprint.pprint(commit)
-
         project = self._get_project_or_create(self._project_name)
         dotName = f"project-{project['id'][:8]}-default-workspace"
         dot = self._dotmesh_client.getDot(dotname=dotName, ns=self._auth[0])
@@ -590,10 +583,7 @@ class Dotscience:
         attempt = 0
         while attempt < 10:
             attempt += 1
-            # TODO: maybe retry for a bit, as presumably populating the model lib
-            # from the commit is async
             # TODO: replace with a query arg in the backend to avoid iterating
-
             models = requests.get(self._hostname+"/v2/models", auth=self._auth).json()
             model_id = None
             for model in models:
@@ -671,10 +661,6 @@ class Dotscience:
         else:
             raise Exception("Unable to load error")
 
-        # TODO poll /v2/models/{model-id}/builds/{build-id} until built
-
-        #self._docker_image = "quay.io/dotmesh/mnist-demo:latest" #"quay.io/dotmesh/dotscience-model-pipeline:ds-version-276ae14c-e20d-416e-9891-317b745b0cc1"
-
         return self._docker_image
 
     def _deploy_to_kube(self):
@@ -705,11 +691,6 @@ class Dotscience:
             body["model_classes"] = classes_encoded.decode('ascii')
         except Exception as e:
             print("Unable to extract classes file (error = %s), continuing regardless (try passing classes=\"classes.json\" to ds.model, where classes.json contains a single map from class ids (strings) to human readable classnames..." % (e,))
-        #print("SENDING BODY")
-        #import pprint
-        #pprint.pprint(body)
-        #import pdb; pdb.set_trace()
-        #"model_classes": classes_encoded,
         deployment = requests.post(
             self._hostname+f"/v2/deployers/{deployer['id']}/deployments",
             json=body,
@@ -753,7 +734,6 @@ class Dotscience:
         deployer_id = self._deployer["id"]
         deployment_id = self._deployment["id"]
         grafana = requests.post(
-            # "/v2/deployers/{id}/deployments/{deploymentId}/dashboard"
             self._hostname+f"/v2/deployers/{deployer_id}/deployments/{deployment_id}/dashboard",
             json={},
             auth=self._auth,
