@@ -368,7 +368,7 @@ class Dotscience:
 
     def _publish_remote_run(self, build, deploy):
         ret = {}
-        print("\n=== Dotscience publish ===\n")
+        print("\n=== Dotscience remote publish ===\n")
         # - Upload output files via S3 API in a tar stream
         # TODO: maybe don't upload all output files, only ones tagged as model?
 
@@ -637,14 +637,10 @@ class Dotscience:
 
 
     def _build_docker_image_on_hub(self):
-
         # find model id
         model_id = self._find_model_id(self.currentRun._id)
-
         build = self._initiate_build(model_id)
-
         self._docker_image = build["image_name"]
-
         attempt = 0
         the_exc = None
         while attempt < 120:
@@ -662,8 +658,6 @@ class Dotscience:
                 print(".", end="")
                 sys.stdout.flush()
                 time.sleep(1.0)
-            if build is not None:
-                print("BUILD:", build)
             if build is not None and build["status"] == "failed":
                 raise Exception("Build failed: %s", build)
             if attempt == 60:
