@@ -274,7 +274,7 @@ class Dotscience:
             api_key=apikey
         )
         self._hostname = hostname
-
+        self._mode = "remote"
         self._auth = (username, apikey)
         self._project_name = project
         print("Checking connection... ", end="")
