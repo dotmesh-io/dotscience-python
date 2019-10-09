@@ -320,8 +320,6 @@ class Dotscience:
                 self.interactive()
             elif runMode == "command":
                 self.script()
-            else:
-                self.remote()
         self._check_started()
 
         # end() will set the end timestamp, if the user hasn't already

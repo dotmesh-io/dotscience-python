@@ -14,4 +14,4 @@ BASE=dotscience-python-test:$CI_DOCKER_TAG
 
 docker build -t $BASE -f Dockerfile.test .
 
-docker run -v dotscience-python-test-examples:/dsbuild/.hypothesis/examples $BASE /bin/bash -c "cd dsbuild ; pytest dotscience $@"
+docker run -v dotscience-python-test-examples:/dsbuild/.hypothesis/examples $BASE /bin/bash -c "cd dsbuild ; pip install -e . ; pytest dotscience $@"
