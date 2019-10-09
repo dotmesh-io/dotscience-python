@@ -15,7 +15,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/dotmesh-io/dotscience-python",
     packages=setuptools.find_packages(),
-    tests_require=['pytest', 'hypothesis'],
+    install_requires=['jsonrpcclient[requests]', 'requests', 'datadots-api>=0.2.1'],
+    tests_require=['pytest', 'hypothesis', 'jsonrpcclient[requests]', 'requests', 'datadots-api>=0.2.1'],
     zip_safe=True,
     classifiers=[
         "Programming Language :: Python :: 3",
