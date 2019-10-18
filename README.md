@@ -1,3 +1,8 @@
+## Releasing
+To release this project, we're using `bumpversion`.
+Install it using: `pip install bumpversion`, then when you have a new tag to release, run `bumpversion --new-version <sem-ver> patch && git push --tags`
+
+It's recommended you also add release notes to the tag using [github releases](https://github.com/dotmesh-io/dotscience-python/releases) - you can add new release notes to old tags by just entering it when you click "draft new release".
 
 ## Installation
 
