@@ -25,7 +25,24 @@ steps:
     repo: quay.io/dotmesh/dotscience-python3
     registry: quay.io
     dockerfile: Dockerfile
-    auto_tag: true
+    tags:
+      - ${DRONE_COMMIT_SHA}
+      - ${DRONE_BRANCH}
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+- name: docker-publish-tag
+  image: plugins/docker
+  when:
+    event: [ tag ]
+  settings:
+    repo: quay.io/dotmesh/dotscience-python3
+    registry: quay.io
+    dockerfile: Dockerfile
+    tags:
+      - ${DRONE_TAG}
+      - latest
     username:
       from_secret: docker_username
     password:
