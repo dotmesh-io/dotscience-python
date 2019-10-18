@@ -5,8 +5,8 @@ steps:
 - name: test
   image: python:3.8.0-alpine3.10
   commands:
-  - pip install --upgrade pip setuptools wheel pytest hypothesis
-  - pip install .
+  - pip3 install --upgrade pip setuptools wheel pytest hypothesis
+  - pip3 install .
   - pytest dotscience
 - name: pypi_publish
   image: plugins/pypi
