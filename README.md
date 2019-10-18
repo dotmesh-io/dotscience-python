@@ -1,3 +1,4 @@
+# dotscience-python
 ## Releasing
 To release this project, we're using `bumpversion`.
 Install it using: `pip install bumpversion`, then when you have a new tag to release, run `bumpversion --new-version <sem-ver> patch && git push --tags`
