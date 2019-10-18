@@ -1,4 +1,5 @@
 name = "dotscience"
+__version__ = '0.6.4'
 
 import json
 import datetime
@@ -934,6 +935,3 @@ def connect(username, apikey, project, hostname=""):
         username, apikey, project, hostname,
     )
 
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
