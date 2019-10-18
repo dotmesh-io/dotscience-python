@@ -1,2 +1,3 @@
 include versioneer.py
 include dotscience/_version.py
+include .git/
