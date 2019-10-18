@@ -1,4 +1,0 @@
-FROM dotscience-python-base:CI_DOCKER_TAG
-
-RUN cd dsbuild ; python3 setup.py install
-#RUN rm -rf dsbuild

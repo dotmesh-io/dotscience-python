@@ -1,0 +1,49 @@
+kind: pipeline
+name: default
+
+steps:
+- name: test
+  image: python:3.8.0-alpine3.10
+  commands:
+  - pip install --upgrade pip setuptools wheel pytest hypothesis
+  - pip install -e .[test]
+  - pytest dotscience
+- name: pypi_publish
+  image: plugins/pypi
+  when:
+    event: [ tag ]
+  settings:
+    username: 
+      from_secret: pypi_username
+    password: 
+      from_secret: pypi_password
+- name: docker-publish
+  image: plugins/docker
+  when:
+    event: [ push ]
+  settings:
+    repo: quay.io/dotmesh/dotscience-python3
+    registry: quay.io
+    dockerfile: Dockerfile
+    tags:
+      - ${DRONE_COMMIT_SHA}
+      - ${DRONE_BRANCH}
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+- name: docker-publish-tag
+  image: plugins/docker
+  when:
+    event: [ tag ]
+  settings:
+    repo: quay.io/dotmesh/dotscience-python3
+    registry: quay.io
+    dockerfile: Dockerfile
+    tags:
+      - ${DRONE_TAG}
+      - latest
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password

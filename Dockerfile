@@ -1,16 +1,16 @@
-FROM python:3
+FROM python:3.8
 
-RUN pip install pytest
-RUN pip install hypothesis
-
+RUN apt-get update && apt-get install git
 RUN mkdir dsbuild
+COPY .git ./dsbuild/.git
+COPY .gitattributes ./dsbuild
 COPY dotscience ./dsbuild/dotscience
 COPY setup.py ./dsbuild
 COPY README.md ./dsbuild
 COPY LICENSE ./dsbuild
-
-COPY .git ./dsbuild/.git
-COPY .gitattributes ./dsbuild
 COPY setup.cfg ./dsbuild
 COPY MANIFEST.in ./dsbuild
 COPY versioneer.py ./dsbuild
+
+RUN cd dsbuild ; python3 setup.py install
+#RUN rm -rf dsbuild
