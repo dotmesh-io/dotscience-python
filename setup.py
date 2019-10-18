@@ -1,12 +1,12 @@
 import setuptools
-import dotscience
+from dotscience import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="dotscience",
-    version=dotscience.__version__,
+    version=__version__,
     author="Subtree, Inc",
     author_email="support@dotscience.com",
     description="Tools for writing Dotscience workloads",
