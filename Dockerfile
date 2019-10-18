@@ -10,6 +10,7 @@ COPY README.md ./dsbuild
 COPY LICENSE ./dsbuild
 COPY setup.cfg ./dsbuild
 COPY MANIFEST.in ./dsbuild
+COPY requirements.txt ./dsbuild
 
 RUN cd dsbuild ; python3 setup.py install
 #RUN rm -rf dsbuild
