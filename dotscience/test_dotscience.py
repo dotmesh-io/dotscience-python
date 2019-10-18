@@ -484,7 +484,7 @@ def test_default_script_name():
     m1 = _parse(s1.getvalue())
 
     # This might be a fragile assertion...
-    assert m1["workload-file"] == "../usr/local/bin/pytest"
+    assert m1["workload-file"].endswith("/usr/local/bin/pytest")
 
 def test_explicit_script_name():
     ds = dotscience.Dotscience()
