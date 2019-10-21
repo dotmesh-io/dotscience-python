@@ -1,4 +1,4 @@
-# dotscience-python
+# dotscience-python [![Build Status](https://drone.app.cloud.dotscience.net/api/badges/dotmesh-io/dotscience-python/status.svg)](https://drone.app.cloud.dotscience.net/dotmesh-io/dotscience-python)
 ## Releasing
 To release this project, we're using `bump2version`.
 Install it using: `pip install bump2version`, then when you have a new tag to release, run `bump2version --new-version <sem-ver> <major|minor|patch> && git push --tags`
