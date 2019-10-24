@@ -10,7 +10,7 @@ COPY README.md ./dsbuild
 COPY LICENSE ./dsbuild
 COPY setup.cfg ./dsbuild
 COPY MANIFEST.in ./dsbuild
-
+COPY requirements-docker.txt ./dsbuild
 
 RUN cd dsbuild ; python setup.py install
-#RUN rm -rf dsbuild
+RUN cd dsbuild ; pip install -r requirements-docker.txt
