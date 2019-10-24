@@ -12,5 +12,4 @@ COPY setup.cfg ./dsbuild
 COPY MANIFEST.in ./dsbuild
 COPY requirements-docker.txt ./dsbuild
 
-RUN cd dsbuild ; python setup.py install
-RUN cd dsbuild ; pip install -r requirements-docker.txt
+RUN cd dsbuild ; python setup.py install; pip install --upgrade pip && pip install -r requirements-docker.txt
