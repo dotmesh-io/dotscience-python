@@ -12,6 +12,8 @@ steps:
   image: plugins/pypi
   when:
     event: [ tag ]
+  depends_on:
+  - test
   settings:
     username: 
       from_secret: pypi_username
@@ -21,6 +23,8 @@ steps:
   image: plugins/docker
   when:
     event: [ push ]
+  depends_on:
+  - test
   settings:
     repo: quay.io/dotmesh/dotscience-python3
     registry: quay.io
@@ -47,3 +51,30 @@ steps:
       from_secret: docker_username
     password:
       from_secret: docker_password
+- name: slack
+  image: plugins/slack
+  when:
+    event: [ push, pull_request ]
+    status: [ success, failure ]
+  depends_on:
+  - docker-publish
+  settings:
+    webhook:
+      from_secret: slack_url
+    channel: ci
+    username: drone
+    icon_url: https://i.pinimg.com/originals/51/29/a4/5129a48ddad9e8408d2757dd10eb836f.jpg
+- name: slack-tag
+  image: plugins/slack
+  when:
+    event: [ tag ]
+    status: [ success, failure ]
+  depends_on:
+  - docker-publish-tag
+  - pypi-publish
+  settings:
+    webhook:
+      from_secret: slack_url
+    channel: ci
+    username: drone
+    icon_url: https://i.pinimg.com/originals/51/29/a4/5129a48ddad9e8408d2757dd10eb836f.jpg
