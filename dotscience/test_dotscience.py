@@ -857,3 +857,39 @@ def test_multi_publish_2():
     assert m1["__ID"] != m2["__ID"]
     assert m1["start"] != m2["start"]
     assert m1["end"] != m2["end"]
+
+
+def test_reconnect_resets_internal_state(monkeypatch):
+    class FakeDotmeshClient:
+        def __init__(self, cluster_url, username, api_key):
+            self.cluster_url = cluster_url
+            self.username = username
+            self.api_key = api_key
+
+        def ping(self):
+            pass
+
+    monkeypatch.setattr(dotscience, "DotmeshClient", FakeDotmeshClient)
+
+    ds = dotscience.Dotscience()
+    ds.connect("me", "pass", "myproj", "https://example.com")
+    assert ds._dotmesh_client.__dict__ == {
+        "cluster_url": "https://example.com/v2/dotmesh/rpc",
+        "username": "me",
+        "api_key": "pass",
+    }
+    assert ds._project_name == "myproj"
+
+    # Pretend we have a cached project:
+    ds._cached_project = "not empty"
+    assert ds._get_project_or_create("myproj") == "not empty"
+
+    # Now, reconnect:
+    ds.connect("me2", "pass2", "myproj2", "https://2.example.com")
+    assert ds._dotmesh_client.__dict__ == {
+        "cluster_url": "https://2.example.com/v2/dotmesh/rpc",
+        "username": "me2",
+        "api_key": "pass2",
+    }
+    assert ds._project_name == "myproj2"
+    assert ds._cached_project == None

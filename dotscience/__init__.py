@@ -253,6 +253,9 @@ class Dotscience:
     currentRun = None
 
     def __init__(self):
+        self._reset()
+
+    def _reset(self):
         self._mode = None
         self._workload_file = None
         self._root = os.getenv('DOTSCIENCE_PROJECT_DOT_ROOT', default=os.getcwd())
@@ -269,6 +272,7 @@ class Dotscience:
         # TODO: make publish etc fail if we're not connected in remote mode.
         if not project:
             raise Exception("Please specify a project name as the third argument to ds.connect()")
+        self._reset()
         self._dotmesh_client = DotmeshClient(
             cluster_url=hostname + "/v2/dotmesh/rpc",
             username=username,
