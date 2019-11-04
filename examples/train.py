@@ -1,6 +1,7 @@
 from __future__ import print_function
 import dotscience as ds
 import os
+import shutil
 
 # defaults to connecting to prod
 ds.connect(
@@ -81,7 +82,12 @@ print('Test accuracy:', ds.metric("accuracy", score[1]))
 #model.save("model.h5")
 #tf.keras.experimental.export_saved_model(model, ds.model(tf, 'model'))
 
+if os.path.isdir("model"):
+    shutil.rmtree("model", ignore_errors=True)
 
 tf.keras.experimental.export_saved_model(model, ds.output('model'))
-ds.model(tf, "mnist", "model", classes="classes.json")
+# copy file into the model dir for the upload
+shutil.copyfile("classes.json", "model/classes.json")
+
+ds.model(tf, "mnist", "model", classes="model/classes.json")
 ds.publish("trained mnist model", deploy=True)
