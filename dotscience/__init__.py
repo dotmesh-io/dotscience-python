@@ -43,6 +43,7 @@ class Run:
         self._workload_file = None
         self._mode = None
         self._root = root
+        self._model_dir = None
 
     def _set_workload_file(self, workload_file):
         self._workload_file = workload_file
@@ -153,6 +154,7 @@ class Run:
             if len(args) != 1:
                 raise RuntimeError('Tensorflow models require a path to the model as the third argument')
             files["model"] = args[0]
+            self._model_dir = args[0]
             return_value = args[0]
             if "classes" in kwargs:
                 files["classes"] = kwargs["classes"]
@@ -241,6 +243,10 @@ class Run:
 
     def newID(self):
         self._id = str(uuid.uuid4())
+
+    # used by the Dotscience lib to determine where the model is saved
+    def getModelDir(self):
+        return self._model_dir
 
     def __str__(self):
         jsonMetadata = json.dumps(self.metadata(), sort_keys=True, indent=4)
@@ -427,16 +433,22 @@ class Dotscience:
 
         temp = tempfile.NamedTemporaryFile(delete=False)
         temp.close()
+
+        dirPrefix = self.currentRun.getModelDir() + "/"
         
         # 1. Tar them
         tar = tarfile.open(temp.name, "w:")
         for f in self.currentRun.metadata()["output"]:
-            tar.add(f)
+            # removing model dir prefix so we can cleanly
+            # upload files (removing previous dir such as 'model/' before extracting this one)
+            tar.add(f, arcname=remove_prefix(f, dirPrefix))
         tar.close()
 
         # 2. Upload tar
-        self._uploadArchive(temp.name, "deploy")
-        print(".", end="")
+        # Uploading to the same model dir so we get proper paths
+        # such as /model/assets/saved_model.json
+        self._uploadArchive(temp.name, self.currentRun.getModelDir())
+        print(".\n", end="")
         sys.stdout.flush()
 
         os.remove(temp.name)
@@ -989,6 +1001,9 @@ def add_parameters(*args, **kwargs):
 
 def parameter(label, value):
     return _defaultDS.parameter(label, value)
+
+def remove_prefix(text, prefix):
+    return text[text.startswith(prefix) and len(prefix):]
 
 add_metric = add_summary
 add_metrics = add_summaries
