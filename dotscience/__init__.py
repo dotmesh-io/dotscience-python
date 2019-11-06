@@ -515,10 +515,6 @@ class Dotscience:
                     print("Waiting a second and trying again...")
                     time.sleep(1.0)
 
-                #upload = requests.put(
-                #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
-                #    data=f
-                #)
         raise Exception("didn't succeed after retrying 10 times")
 
     def _uploadArchive(self, archiveFile, path):
@@ -568,10 +564,6 @@ class Dotscience:
                     print("Waiting a second and trying again...")
                     time.sleep(1.0)
 
-                #upload = requests.put(
-                #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
-                #    data=f
-                #)
         raise Exception("didn't succeed after retrying 10 times")
 
     def _commit_run_on_hub(self):
