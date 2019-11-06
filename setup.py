@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dotscience",
-    version="0.6.8",
+    version="0.6.9",
     author="Subtree, Inc",
     author_email="support@dotscience.com",
     description="Tools for writing Dotscience workloads",
