@@ -11,6 +11,8 @@ import time
 import platform
 import random
 import string
+import tarfile
+import tempfile
 
 from dotmesh.client import DotmeshClient, DotName
 
@@ -41,6 +43,7 @@ class Run:
         self._workload_file = None
         self._mode = None
         self._root = root
+        self._model_dir = None
 
     def _set_workload_file(self, workload_file):
         self._workload_file = workload_file
@@ -151,6 +154,7 @@ class Run:
             if len(args) != 1:
                 raise RuntimeError('Tensorflow models require a path to the model as the third argument')
             files["model"] = args[0]
+            self._model_dir = args[0]
             return_value = args[0]
             if "classes" in kwargs:
                 files["classes"] = kwargs["classes"]
@@ -239,6 +243,10 @@ class Run:
 
     def newID(self):
         self._id = str(uuid.uuid4())
+
+    # used by the Dotscience lib to determine where the model is saved
+    def getModelDir(self):
+        return self._model_dir
 
     def __str__(self):
         jsonMetadata = json.dumps(self.metadata(), sort_keys=True, indent=4)
@@ -422,10 +430,28 @@ class Dotscience:
     def _upload_output_files(self):
         # TODO: upload them all in one go, using PUT tarball API, once
         # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
+
+        temp = tempfile.NamedTemporaryFile(delete=False)
+        temp.close()
+
+        dirPrefix = self.currentRun.getModelDir() + "/"
+        
+        # 1. Tar them
+        tar = tarfile.open(temp.name, "w:")
         for f in self.currentRun.metadata()["output"]:
-            self._upload(f)
-            print(".", end="")
-            sys.stdout.flush()
+            # removing model dir prefix so we can cleanly
+            # upload files (removing previous dir such as 'model/' before extracting this one)
+            tar.add(f, arcname=remove_prefix(f, dirPrefix))
+        tar.close()
+
+        # 2. Upload tar
+        # Uploading to the same model dir so we get proper paths
+        # such as /model/assets/saved_model.json
+        self._uploadArchive(temp.name, self.currentRun.getModelDir())
+        print(".\n", end="")
+        sys.stdout.flush()
+
+        os.remove(temp.name)
 
     def _get_project_or_create(self, project_name, verbose=False):
         if self._cached_project:
@@ -489,10 +515,55 @@ class Dotscience:
                     print("Waiting a second and trying again...")
                     time.sleep(1.0)
 
-                #upload = requests.put(
-                #    self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{filename}", auth=self._auth,
-                #    data=f
-                #)
+        raise Exception("didn't succeed after retrying 10 times")
+
+    def _uploadArchive(self, archiveFile, path):
+        project = self._get_project_or_create(self._project_name)
+        dotName = f"project-{project['id'][:8]}-default-workspace"
+        attempt = 0
+        while attempt < 10:
+            attempt += 1
+            with open(archiveFile, 'rb') as f:
+                # workaround https://github.com/psf/requests/issues/2422 - unable
+                # to see response code when body isn't fully consumed due to error
+                # (e.g. 423 Locked)
+                import http
+                from base64 import b64encode
+
+                userAndPass = b64encode((f"{self._auth[0]}:{self._auth[1]}").encode("ascii")).decode("ascii")
+                headers = {
+                    'Authorization' : 'Basic %s' %  userAndPass,
+                    'Extract' : 'true',
+                }
+
+                scheme, hostname = self._hostname.split("://")
+                if scheme == "http":
+                    conn = http.client.HTTPConnection(hostname)
+                elif scheme == "https":
+                    conn = http.client.HTTPSConnection(hostname)
+                else:
+                    raise Exception("Unsupported scheme %s", scheme)
+
+                try:
+                    R = conn.request(
+                        "PUT",
+                        self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{path}",
+                        f,
+                        headers, # {"Content-Type": "application/json", "Accept": "application/json"},
+                    )
+                    # Success, return - otherwise we'll retry
+                    return
+                except Exception as e:
+                    print("Error uploading %s: %s" % (archiveFile, e))
+                    new_R = conn.getresponse()
+                    print("Response code:", new_R.status)
+                    if new_R.status == 423:
+                        print("--> Try stopping Jupyter within Dotscience or wait "
+                             "for the lock owner (e.g. task ID) listed below to finish, then try again")
+                    print("Response body:", new_R.read())
+                    print("Waiting a second and trying again...")
+                    time.sleep(1.0)
+
         raise Exception("didn't succeed after retrying 10 times")
 
     def _commit_run_on_hub(self):
@@ -922,6 +993,9 @@ def add_parameters(*args, **kwargs):
 
 def parameter(label, value):
     return _defaultDS.parameter(label, value)
+
+def remove_prefix(text, prefix):
+    return text[text.startswith(prefix) and len(prefix):]
 
 add_metric = add_summary
 add_metrics = add_summaries
