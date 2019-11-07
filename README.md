@@ -197,23 +197,52 @@ ds.publish('Tried, in vain, to do some awesome data science!')
 ```
 
 ### Models
-Models that are generated in your code can be recorded with `ds.model(..)`. We currently only support Tensorflow models.
+
+If your run has generated a Tensorflow model, you can declare it as such. This will load the model into the Model Library on the Dotscience Hub, and will enable automated deployment and model tracking features.
+
+This can be done with `model()` or `add_model()`:
 
 ```python
+import dotscience as ds
 import tensorflow as tf
 
-ds.model(tf, 
-        "my model name", 
-        "model_base_dir", 
-        classes="model/classes.json"
-        )  
+ds.script()
+ds.start()
+
+...
+
+tf.saved_model.simple_save(
+    tf.keras.backend.get_session(),
+    ds.model(tf, "potatoes", "./model"),        # <---
+    inputs={'input_image_bytes': model.input},
+    outputs={t.name:t for t in model.outputs})
+
+...or...
+
+tf.saved_model.simple_save(
+    tf.keras.backend.get_session(),
+    "./model",
+    inputs={'input_image_bytes': model.input},
+    outputs={t.name:t for t in model.outputs})
+
+ds.add_model(tf, "potatoes", "./model")         # <---
+
+ds.publish('Trained the potato classifier')
 ```
 
-The first argument is the module itself (the library extracts the version), then the model name (any string), then the path to the model directory, and finally optional keyword argument `(kwarg) classes="classes.json"`, where `classes.json` is a map of string class IDs eg "0", "1", etc, to human-readable class names.
+The first argument to `model` or `add_model` should be the Tensorflow module itself, as imported by `import tensorflow as tf` in our example. This is used to identify it as a Tensorflow model (other types of model will be used in future), and to record the Tensorflow version used to generate it.
 
-Note: The classes file must be a path inside the model directory.
+The second argument is the model name for the Model Library. In this case, we called it `potatoes`, as our model is a potato classifier.
 
-When models are recorded, you can then [build and deploy models](/references/dotscience-python-library/#build-and-deploy-models-into-production) with Dotscience. You can look at models that are registered, their versions, build status and the logs at https://cloud.dotscience.com/models/builds
+The third argument is the path to the directory we're saving the Tensorflow model in, in this case `./model`. If called as `model()` rather than `add_model()`, this path is returned, so that it can be used to wrap the output path argument to `simple_save` in our example.
+
+For classifier models, an optional keyword argument is supported in both `model()` and `add_model()`: `classes` can be provided as a path to a JSON file listing your classes, to enable automatic model metric tracking in deployment. Note that the classes file must be a path within the model directory.
+
+```python
+ds.model(tf, "mnist", "model", classes="model/classes.json")
+```
+
+Note that we don't need to call `output()` for the paths passed to `model()` and `add_model()`; they automatically declare the files as outputs from this run.
 
 ### Describing the run
 
@@ -319,6 +348,13 @@ ds.add_outputs('output_file_1.csv', 'output_file_2.csv')
 
 ds.publish('Did some awesome data science!')
 ```
+You can also name directories as inputs and outputs.
+
+In the case of a directory as an input, the directory will be scanned and all the files in that directory (or its subdirectories) will be recorded as inputs at the time when `ds.input()`, `ds.add_input()` or `ds.add_inputs()` is called; any new files that crop up later will NOT be included, as it's assumed you'll read the files right after the call, so any subsequently-added files were the result of later processing steps.
+
+In the case of a directory marked as an output, the directory will only be scanned when the run is published. This is because you will most like call `ds.output()` or similar on an empty directory, then a subsequent step will fill that directory with files. The directory name is stored, and when the run is published, that directory (and all its subdirectories) will be scanned for files to record as outputs.
+
+Note that in either case, relative pathnames are interpreted relative to the current working directory; the library will handle converting them into paths relative to the workspace root, as required by the run metadata format.
 
 ### Labels
 
