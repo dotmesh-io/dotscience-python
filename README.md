@@ -77,6 +77,8 @@ This instructs the library to record the script filename (from `sys.argv[0]`) in
 
 If `sys.argv[0]` isn't helpful in some other situation, you can call `ds.script('FILENAME')` to specify the script file, relative to the current working directory. In fact, in a Jupyter notebook, you could specify `ds.script('my-notebook.ipynb')` to manually specify the notebook file and override the automatic recording of the notebook file, but there wouldn't be any point!
 
+If you don't call either `ds.interactive()` or `ds.script()`, the library will try and guess by examining its environment. This should work in most cases, except if you call a script from inside JupyterLab (either through a terminal, or by calling `system()` or similar from your notebook), whereupon it will think it's in interactive mode - so it's best to include `ds.script()` in your scripts, just in case!
+
 ## Dotscience Anywhere - Remote mode
 If you want to use own IDE or scripts, you can connect to Dotscience with `ds.connect()`, and use all of the dotscience library functions, like `ds.model()` and `ds.publish()`. This is particularly useful when you are interested in deploying your models into production without run tracking and provenance. Refer section on [Script based development with Dotscience Anywhere](/tutorials/script-based-development/) for a tutorial on this.
 
