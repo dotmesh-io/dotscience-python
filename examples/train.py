@@ -8,7 +8,7 @@ ds.connect(
     os.getenv("DOTSCIENCE_USERNAME"), 
     os.getenv("DOTSCIENCE_APIKEY"), 
     os.getenv("DOTSCIENCE_PROJECT_NAME"),
-    os.getenv("DOTSCIENCE_HOSTNAME")
+    os.getenv("DOTSCIENCE_URL")
 )
 
 import tensorflow as tf
