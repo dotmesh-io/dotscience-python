@@ -16,6 +16,8 @@ import tempfile
 
 from dotmesh.client import DotmeshClient, DotName
 
+ENV_DOTSCIENCE_BUILDER = 'DOTSCIENCE_BUILDER'
+
 # Paths will be relative to root, not necessarily cwd
 def _add_output_path(root, nameset, path):
     full_path = os.path.join(root, path)
@@ -678,7 +680,7 @@ class Dotscience:
         while attempt < 120:
             attempt += 1
             try:
-                resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={})
+                resp = requests.post(self._hostname+f"/v2/models/{model_id}/builds", auth=self._auth, json={"builder":  os.getenv(ENV_DOTSCIENCE_BUILDER)})
                 if resp.status_code != 201:
                     raise Exception(f"Error {resp.status_code} on POST to /v2/models/{model_id}/builds: {resp.content}")
                 build = resp.json()
