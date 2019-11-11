@@ -20,7 +20,7 @@ If you are using Dotscience to track a model whose source code is a script other
 
 We've made a Docker image by taking the stock `python:3` image and pre-installing the Dotscience library like so:
 
-```
+```bash
 $ docker run -ti quay.io/dotmesh/dotscience-python3:latest
 Python 3.7.0 (default, Aug  4 2018, 02:33:39) 
 [GCC 6.3.0 20170516] on linux
@@ -30,7 +30,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ### Install it from PyPi
 
-```
+```bash
 $ pip install dotscience
 Collecting dotscience
   Downloading https://files.pythonhosted.org/packages/b2/e9/81db25b03e4c2b0115a7cd9078f0811b709a159493bb1b30e96f0906e1a1/dotscience-0.0.1-py3-none-any.whl
@@ -78,6 +78,43 @@ This instructs the library to record the script filename (from `sys.argv[0]`) in
 If `sys.argv[0]` isn't helpful in some other situation, you can call `ds.script('FILENAME')` to specify the script file, relative to the current working directory. In fact, in a Jupyter notebook, you could specify `ds.script('my-notebook.ipynb')` to manually specify the notebook file and override the automatic recording of the notebook file, but there wouldn't be any point!
 
 If you don't call either `ds.interactive()` or `ds.script()`, the library will try and guess by examining its environment. This should work in most cases, except if you call a script from inside JupyterLab (either through a terminal, or by calling `system()` or similar from your notebook), whereupon it will think it's in interactive mode - so it's best to include `ds.script()` in your scripts, just in case!
+
+## Dotscience Anywhere - Remote mode
+If you want to use own IDE or scripts, you can connect to Dotscience with `ds.connect()`, and use all of the dotscience library functions, like `ds.model()` and `ds.publish()`. This is particularly useful when you are interested in deploying your models into production without run tracking and provenance. Refer section on [Script based development with Dotscience Anywhere](/tutorials/script-based-development/) for a tutorial on this.
+
+### Connect
+
+You can use `ds.connect(..)` in your scripts in any environment to connect to the Dotscience Hub with your username and API key.
+
+```python
+
+ds.connect(
+    "DOTSCIENCE_USERNAME", 
+    "DOTSCIENCE_APIKEY", 
+    "DOTSCIENCE_PROJECT_NAME",
+    "DOTSCIENCE_HOSTNAME"
+)
+```
+
+If the `"DOTSCIENCE_HOSTNAME"` is not specified, it defaults to `"https://cloud.dotscience.com"`
+
+The quickest way to deploy models into production is by doing 
+
+```python
+ds.connect(
+    os.getenv("DOTSCIENCE_USERNAME"), 
+    os.getenv("DOTSCIENCE_APIKEY"), 
+    os.getenv("DOTSCIENCE_PROJECT_NAME"),
+    os.getenv("DOTSCIENCE_HOSTNAME")
+)
+
+import tensorflow as tf
+model = Sequential()
+# build and train model
+
+ds.model(tf, "mnist", "model", classes="model/classes.json")
+ds.publish("trained mnist model", deploy=True)
+```
 
 ## All the things you can record
 
@@ -160,6 +197,54 @@ raise DataFormatError(ds.error('The data wasn't correctly formatted'))
 
 ds.publish('Tried, in vain, to do some awesome data science!')
 ```
+
+### Models
+
+If your run has generated a Tensorflow model, you can declare it as such. This will load the model into the Model Library on the Dotscience Hub, and will enable automated deployment and model tracking features.
+
+This can be done with `model()` or `add_model()`:
+
+```python
+import dotscience as ds
+import tensorflow as tf
+
+ds.script()
+ds.start()
+
+...
+
+tf.saved_model.simple_save(
+    tf.keras.backend.get_session(),
+    ds.model(tf, "potatoes", "./model"),        # <---
+    inputs={'input_image_bytes': model.input},
+    outputs={t.name:t for t in model.outputs})
+
+...or...
+
+tf.saved_model.simple_save(
+    tf.keras.backend.get_session(),
+    "./model",
+    inputs={'input_image_bytes': model.input},
+    outputs={t.name:t for t in model.outputs})
+
+ds.add_model(tf, "potatoes", "./model")         # <---
+
+ds.publish('Trained the potato classifier')
+```
+
+The first argument to `model` or `add_model` should be the Tensorflow module itself, as imported by `import tensorflow as tf` in our example. This is used to identify it as a Tensorflow model (other types of model will be used in future), and to record the Tensorflow version used to generate it.
+
+The second argument is the model name for the Model Library. In this case, we called it `potatoes`, as our model is a potato classifier.
+
+The third argument is the path to the directory we're saving the Tensorflow model in, in this case `./model`. If called as `model()` rather than `add_model()`, this path is returned, so that it can be used to wrap the output path argument to `simple_save` in our example.
+
+For classifier models, an optional keyword argument is supported in both `model()` and `add_model()`: `classes` can be provided as a path to a JSON file listing your classes, to enable automatic model metric tracking in deployment. Note that the classes file must be a path within the model directory.
+
+```python
+ds.model(tf, "mnist", "model", classes="model/classes.json")
+```
+
+Note that we don't need to call `output()` for the paths passed to `model()` and `add_model()`; they automatically declare the files as outputs from this run.
 
 ### Describing the run
 
@@ -265,7 +350,6 @@ ds.add_outputs('output_file_1.csv', 'output_file_2.csv')
 
 ds.publish('Did some awesome data science!')
 ```
-
 You can also name directories as inputs and outputs.
 
 In the case of a directory as an input, the directory will be scanned and all the files in that directory (or its subdirectories) will be recorded as inputs at the time when `ds.input()`, `ds.add_input()` or `ds.add_inputs()` is called; any new files that crop up later will NOT be included, as it's assumed you'll read the files right after the call, so any subsequently-added files were the result of later processing steps.
@@ -335,50 +419,6 @@ ds.add_parameters(prefilter=True, smooth=True, smoothing_factor=12)
 ds.publish('Did some awesome data science!')
 ```
 
-### Models
-
-If your run has generated a Tensorflow model, you can declare it as such. This will load the model into the Model Library on the Dotscience Hub, and will enable automated deployment and model tracking features.
-
-This can be done with `model()` or `add_model()`:
-
-```python
-import dotscience as ds
-import tensorflow as tf
-
-ds.script()
-ds.start()
-
-...
-
-tf.saved_model.simple_save(
-    tf.keras.backend.get_session(),
-    ds.model(tf, "potatoes", "./model"),        # <---
-    inputs={'input_image_bytes': model.input},
-    outputs={t.name:t for t in model.outputs})
-
-...or...
-
-tf.saved_model.simple_save(
-    tf.keras.backend.get_session(),
-    "./model",
-    inputs={'input_image_bytes': model.input},
-    outputs={t.name:t for t in model.outputs})
-
-ds.add_model(tf, "potatoes", "./model")         # <---
-
-ds.publish('Trained the potato classifier')
-```
-
-The first argument to `model` or `add_model` should be the Tensorflow module itself, as imported by `import tensorflow as tf` in our example. This is used to identify it as a Tensorflow model (other types of model will be used in future), and to record the Tensorflow version used to generate it.
-
-The second argument is the model name for the Model Library. In this case, we called it `potatoes`, as our model is a potato classifier.
-
-The third argument is the path to the directory we're saving the Tensorflow model in, in this case `./model`. If called as `model()` rather than `add_model()`, this path is returned, so that it can be used to wrap the output path argument to `simple_save` in our example.
-
-For classifier models, an optional keyword argument is supported in both `model()` and `add_model()`: `classes` can be provided as a path to a JSON file listing your classes, to enable automatic model metric tracking in deployment.
-
-Note that we don't need to call `output()` for the paths passed to `model()` and `add_model()`; they automatically declare the files as outputs from this run.
-
 ## Multiple runs
 
 There's nothing to stop you from doing more than one "run" in one go; just call `start()` at the beginning and `publish()` at the end of each.
@@ -434,3 +474,16 @@ for smoothing in [1.0, 1.5, 2.0]:
 ```
 
 In that example, we've loaded the data into memory once and re-used it in each run - so we've done that before the call to `start()` to record when the actual run starts; we could have put a call to `end()` just before `publish()`, but `publish()` assumes the run is ended when you publish it anyway.
+
+### Build and deploy models into production
+
+`ds.publish` can, optionally, build and deploy any [registered models](/references/dotscience-python-library/#models) into production.
+
+The default behavior of `ds.publish` is
+```python
+ ds.publish("description", build=False, deploy=False)
+```
+
+Setting `build=True` instructs Dotscience to look for registered model directories in the run, and if present, Dotscience builds docker images for the model. All builds for your account, along with their logs, and status can be found on https://cloud.dotscience.com/models/builds
+
+Setting `deploy=True` instructs Dotscience to build docker images of registered models, and in addition to that, it triggers a model deployment into a default Kubernetes cluster managed by Dotscience. This looks for an available managed deployer (creates one if none exist), and creates a deployment. You can look at the model deployments, their status, versions and logs at https://cloud.dotscience.com/models/deployments.
