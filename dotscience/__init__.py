@@ -739,6 +739,10 @@ class Dotscience:
 
         return self._docker_image
 
+    def _get_deployment_url(self, host):
+        scheme = os.getenv('DOTSCIENCE_MODEL_URL_SCHEME', default="https")
+        return scheme+"://"+host+"/v1/models/model"
+
     def _deploy_to_kube(self):
         # TODO: support specifying the deployer
         deployers = requests.get(self._hostname+"/v2/deployers", auth=self._auth).json()
@@ -773,7 +777,7 @@ class Dotscience:
             auth=self._auth,
         )
         self._deployment = deployment.json()
-        return "https://"+deployment.json()["host"]+"/v1/models/model:predict"
+        return self._get_deployment_url(deployment.json()["host"]) + ":predict"
 
     def _wait_active(self):
         if self._deployment is None:
@@ -783,7 +787,7 @@ class Dotscience:
         while attempt < 120:
             attempt += 1
             try:
-                resp = requests.get("https://"+self._deployment["host"]+"/v1/models/model")
+                resp = requests.get(self._get_deployment_url(self._deployment["host"]))
                 if resp.status_code != 200:
                     raise Exception("status code %s" % (resp.status_code,))
                 return
