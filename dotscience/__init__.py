@@ -742,10 +742,10 @@ class Dotscience:
     def _deploy_to_kube(self):
         # TODO: support specifying the deployer
         deployers = requests.get(self._hostname+"/v2/deployers", auth=self._auth).json()
-        managed = [d for d in deployers if d["managed"]]
-        if len(managed) == 0:
-            raise Exception("Can't deploy - no managed deployers found")
-        deployer = managed[0]
+        online = [d for d in deployers if d["status"] == "online"]
+        if len(online) == 0:
+            raise Exception("Can't deploy - no online deployers found")
+        deployer = online[0]
         self._deployer = deployer
         body = {
             # TODO fill this in
