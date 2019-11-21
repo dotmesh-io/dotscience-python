@@ -138,13 +138,16 @@ class Run:
         self.add_label(label, value)
         return value
 
-    def model(self, model_info, name, filepath, *args, **kwargs):
-        artefact_types = ["tensorflow-model", "sklearn"]
-        artefact_type = kwargs.get("model_type", None)
+    def sklearn_model(self, module, model, name, filepath):
+        joblib.dump(model, filepath)
+        self.model(module, name, filepath)
+
+    def model(self, module, name, filepath, *args, **kwargs):
+        artefact_types = ["tensorflow-model", "sklearn-model"]
+        artefact_type = None
         try:
-            if model_info.__name__ == "tensorflow":
-                artefact_type = "tensorflow-model"
-        except:
+            artefact_type = module.__name__ + "-model"
+        except AttributeError:
             pass
 
         if artefact_type not in artefact_types:
@@ -153,15 +156,12 @@ class Run:
         labels = {"type": artefact_type}
         files = {}
         return_value = None
-        if artefact_type == "tensorflow-model":
-            labels["version"] = model_info.__version__
-            files["model"] = filepath
-            self._model_dir = filepath
-            return_value = filepath
-            if "classes" in kwargs:
-                files["classes"] = kwargs["classes"]
-        if artefact_type == "sklearn":
-            joblib.dump(model_info, filepath)
+        labels["version"] = module.__version__
+        files["model"] = filepath
+        self._model_dir = filepath
+        return_value = filepath
+        if "classes" in kwargs:
+            files["classes"] = kwargs["classes"]
 
         relative_files = {}
         for key in files:
