@@ -138,9 +138,6 @@ class Run:
         self.add_label(label, value)
         return value
 
-    def tf_model(self, meta, name, filepath, *args, **kwargs):
-        pass
-
     def model(self, model_info, name, filepath, *args, **kwargs):
         artefact_types = ["tensorflow-model", "sklearn"]
         artefact_type = kwargs.get("model_type", None)
