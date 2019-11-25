@@ -215,6 +215,11 @@ class MockTensorflow:
         self.__name__ = "tensorflow"
         self.__version__ = "1.2.3.4"
 
+class MockSKLearn:
+    def __init__(self):
+        self.__name__ = "sklearn"
+        self.__version__ = "0.21.3"
+
 @given(text(),sampled_from(output_files))
 def test_run_tensorflow_model(name,x):
     r = dotscience.Run("/workspace-root")
@@ -234,7 +239,7 @@ def test_run_tensorflow_model(name,x):
 def test_run_tensorflow_model_with_classes(name,x,c):
     assume(x != c)
     r = dotscience.Run("/workspace-root")
-    xpath = tidy_path("/workspace-root/" + x)
+    xpath = tidy_path("/workspace-root/"+x)
     relxpath = os.path.relpath(xpath,start="/workspace-root")
     cpath = tidy_path("/workspace-root/" + c)
     relcpath = os.path.relpath(cpath,start="/workspace-root")
@@ -248,6 +253,27 @@ def test_run_tensorflow_model_with_classes(name,x,c):
                         "output": sorted([relxpath,relcpath]),
                         "labels": {"artefact:"+name: "{\"files\":{\"classes\":\"" + relcpath + "\",\"model\":\"" + relxpath + "\"},\"type\":\"tensorflow-model\",\"version\":\"1.2.3.4\"}"},
     }, sort_keys=True, indent=4), r._id)
+
+@given(text(),sampled_from(output_files),sampled_from(output_files))
+def test_run_sklearn_model(name,x,c):
+    assume(x != c)
+    r = dotscience.Run("./test_dir")
+    xpath = tidy_path("./test_dir/" + x)
+    relxpath = os.path.relpath(xpath,start="./test_dir/")
+    if os.path.exists(xpath):
+        os.remove(xpath)
+
+    assert r.sklearn_model(MockSKLearn(), object(), name, xpath) == xpath
+    assert os.path.exists(xpath)
+    assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
+    (r._id, json.dumps({"version": "1",
+                        "summary": {},
+                        "parameters": {},
+                        "input": [],
+                        "output": sorted([relxpath]),
+                        "labels": {"artefact:"+name: "{\"files\":{\"model\":\"" + relxpath + "\"},\"type\":\"sklearn-model\",\"version\":\"0.21.3\"}"},
+    }, sort_keys=True, indent=4), r._id)
+    os.remove(xpath)
 
 @given(text())
 def test_run_labels_1(x):
