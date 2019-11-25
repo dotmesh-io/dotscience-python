@@ -138,6 +138,7 @@ class Run:
         self.add_label(label, value)
         return value
 
+    # takes a scikit learn model and puts it into a file, then marks it up as a model
     def sklearn_model(self, module, model, name, filepath):
         joblib.dump(model, filepath)
         self.model(module, name, filepath)
