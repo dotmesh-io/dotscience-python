@@ -143,6 +143,8 @@ class Run:
         if os.path.exists(filepath):
             raise RuntimeError('File already exists - if it already contains the model, use ds.model() instead')
         else:
+            if not os.path.exists(filepath):
+                os.makedirs(filepath)
             with open(filepath, 'w') as fob:
                 joblib.dump(model, fob)
             return self.model(module, name, filepath)
