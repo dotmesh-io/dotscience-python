@@ -140,12 +140,14 @@ class Run:
 
     # takes a scikit learn model and puts it into a file, then marks it up as a model
     def sklearn_model(self, module, model, name, filepath):
+        print(filepath)
         if os.path.exists(filepath):
-            raise RuntimeError('File already exists - if it already contains the model, use ds.model() instead')
+            raise RuntimeError('File %s already exists - if it already contains the model, use ds.model() instead' % filepath)
         else:
-            if not os.path.exists(filepath):
-                os.makedirs(filepath)
-            with open(filepath, 'w') as fob:
+            directory = os.path.dirname(filepath)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with open(filepath, 'wb') as fob:
                 joblib.dump(model, fob)
             return self.model(module, name, filepath)
 
