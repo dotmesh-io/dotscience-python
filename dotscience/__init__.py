@@ -141,11 +141,11 @@ class Run:
     # takes a scikit learn model and puts it into a file, then marks it up as a model
     def sklearn_model(self, module, model, name, filepath):
         if os.path.exists(filepath):
-            raise RuntimeError('File already exists - if it contains the model, use ds.model() instead')
+            raise RuntimeError('File already exists - if it already contains the model, use ds.model() instead')
         else:
             with open(filepath, 'w') as fob:
                 joblib.dump(model, fob)
-            self.model(module, name, filepath)
+            return self.model(module, name, filepath)
 
     def model(self, module, name, filepath, *args, **kwargs):
         artefact_types = ["tensorflow-model", "sklearn-model"]
