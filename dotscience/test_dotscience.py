@@ -239,9 +239,9 @@ def test_run_tensorflow_model(name,x):
 def test_run_tensorflow_model_with_classes(name,x,c):
     assume(x != c)
     r = dotscience.Run("/workspace-root")
-    xpath = tidy_path(os.path.join("/workspace-root",x))
+    xpath = tidy_path("/workspace-root/"+x)
     relxpath = os.path.relpath(xpath,start="/workspace-root")
-    cpath = tidy_path(os.path.join("/workspace-root",c))
+    cpath = tidy_path("/workspace-root/" + c)
     relcpath = os.path.relpath(cpath,start="/workspace-root")
 
     assert r.model(MockTensorflow(), name, xpath, classes=cpath) == xpath
