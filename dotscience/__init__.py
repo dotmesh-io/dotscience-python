@@ -1006,6 +1006,9 @@ def summary(label, value):
 def model(kind, name, *args, **kwargs):
     return _defaultDS.model(kind, name, *args, **kwargs)
 
+def sklearn_model(module, model, name, filename):
+    return _defaultDS.sklearn_model(module, model, name, filename)
+
 def add_parameter(label, value):
     _defaultDS.add_parameter(label, value)
 
