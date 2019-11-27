@@ -141,11 +141,13 @@ class Run:
     # takes a scikit learn model and puts it into a file, then marks it up as a model
     def sklearn_model(self, module, model, name, filepath):
         print(filepath)
+        if filepath.startswith("/"):
+            raise RuntimeError('File must be relative to current directory')
         if os.path.exists(filepath):
             raise RuntimeError('File %s already exists - if it already contains the model, use ds.model() instead' % filepath)
         else:
             directory = os.path.dirname(filepath)
-            if not os.path.exists(directory):
+            if not os.path.exists(directory) and directory != "" and directory != "/":
                 os.makedirs(directory)
             with open(filepath, 'wb') as fob:
                 joblib.dump(model, fob)
