@@ -916,6 +916,10 @@ class Dotscience:
         self._check_started()
         return self.currentRun.model(kind, name, *args, **kwargs)
 
+    def sklearn_model(self, module, model, name, filename):
+        self._check_started()
+        return self.currentRun.sklearn_model(module, model, name, filename)
+
     def add_parameters(self, *args, **kwargs):
         self._check_started()
         self.currentRun.add_parameters(*args, **kwargs)
