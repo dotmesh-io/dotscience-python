@@ -111,7 +111,6 @@ class Run:
     # files might not exist yet.  So expansion happens in metadata()
     # below!
     def add_output(self, filename):
-        print("-----------%s----------- " % filename)
         filename_str = os.path.relpath(str(filename),start=self._root)
         self._outputs.add(filename_str)
 
