@@ -111,6 +111,7 @@ class Run:
     # files might not exist yet.  So expansion happens in metadata()
     # below!
     def add_output(self, filename):
+        print("-----------%s----------- " % filename)
         filename_str = os.path.relpath(str(filename),start=self._root)
         self._outputs.add(filename_str)
 
@@ -137,21 +138,6 @@ class Run:
     def label(self, label, value):
         self.add_label(label, value)
         return value
-
-    # takes a scikit learn model and puts it into a file, then marks it up as a model
-    def sklearn_model(self, module, model, name, filepath):
-        print(filepath)
-        if filepath.startswith("/"):
-            raise RuntimeError('File must be relative to current directory')
-        if os.path.exists(filepath):
-            raise RuntimeError('File %s already exists - if it already contains the model, use ds.model() instead' % filepath)
-        else:
-            directory = os.path.dirname(filepath)
-            if not os.path.exists(directory) and directory != "" and directory != "/":
-                os.makedirs(directory)
-            with open(filepath, 'wb') as fob:
-                joblib.dump(model, fob)
-            return self.model(module, name, filepath)
 
     def model(self, module, name, filepath, *args, **kwargs):
         artefact_types = ["tensorflow-model", "sklearn-model"]
@@ -923,10 +909,6 @@ class Dotscience:
         self._check_started()
         return self.currentRun.model(kind, name, *args, **kwargs)
 
-    def sklearn_model(self, module, model, name, filename):
-        self._check_started()
-        return self.currentRun.sklearn_model(module, model, name, filename)
-
     def add_parameters(self, *args, **kwargs):
         self._check_started()
         self.currentRun.add_parameters(*args, **kwargs)
@@ -1012,9 +994,6 @@ def summary(label, value):
 
 def model(kind, name, *args, **kwargs):
     return _defaultDS.model(kind, name, *args, **kwargs)
-
-def sklearn_model(module, model, name, filename):
-    return _defaultDS.sklearn_model(module, model, name, filename)
 
 def add_parameter(label, value):
     _defaultDS.add_parameter(label, value)
