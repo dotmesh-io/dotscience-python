@@ -442,31 +442,37 @@ class Dotscience:
         print("=== Dotscience publish complete ===\n")
         return ret
 
-    def _upload_output_files(self):
-        # TODO: upload them all in one go, using PUT tarball API, once
-        # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
-
-        temp = tempfile.NamedTemporaryFile(delete=False)
-        temp.close()
-
-        dirPrefix = self.currentRun.getModelDir() + "/"
-        
-        # 1. Tar them
-        tar = tarfile.open(temp.name, "w:")
+    def _tar_outputFiles(self, tarFileName):
+        tar = tarfile.open(tarFileName, "w:")
         for f in self.currentRun.metadata()["output"]:
             # removing model dir prefix so we can cleanly
             # upload files (removing previous dir such as 'model/' before extracting this one)
             tar.add(f, arcname=remove_prefix(f, dirPrefix))
         tar.close()
 
-        # 2. Upload tar
-        # Uploading to the same model dir so we get proper paths
-        # such as /model/assets/saved_model.json
-        self._uploadArchive(temp.name, self.currentRun.getModelDir())
+    def _upload_output_files(self):
+        # TODO: upload them all in one go, using PUT tarball API, once
+        # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
+
+        
+        dirPrefix = self.currentRun.getModelDir() + "/"
+        
+        outputFileSize = len(self.currentRun.metadata()["output"])
+        if outputFileSize > 1:
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            temp.close()
+            # 1. Tar the files in the model dir
+            self._tar_outputFiles(temp.name)
+            # 2. Upload the tar
+            # Uploading to the same model dir so we get proper paths
+            # such as /model/assets/saved_model.json
+            self._uploadArchive(temp.name, self.currentRun.getModelDir())
+            os.remove(temp.name)
+        elif outputFileSize == 1:
+            self._uploadArchive(self.currentRun.metadata()["output"][0], self.currentRun.getModelDir())
+        
         print(".\n", end="")
         sys.stdout.flush()
-
-        os.remove(temp.name)
 
     def _get_project_or_create(self, project_name, verbose=False):
         if self._cached_project:
