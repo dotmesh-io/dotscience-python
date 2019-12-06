@@ -443,6 +443,10 @@ class Dotscience:
         return ret
 
     def _tar_outputFiles(self, tarFileName):
+        dirPrefix = self.currentRun.getModelDir() + "/"
+        # TODO: upload them all in one go, using PUT tarball API, once
+        # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
+        
         tar = tarfile.open(tarFileName, "w:")
         for f in self.currentRun.metadata()["output"]:
             # removing model dir prefix so we can cleanly
@@ -450,14 +454,9 @@ class Dotscience:
             tar.add(f, arcname=remove_prefix(f, dirPrefix))
         tar.close()
 
-    def _upload_output_files(self):
-        # TODO: upload them all in one go, using PUT tarball API, once
-        # https://github.com/dotmesh-io/dotmesh/issues/754 is implemented
-
-        
-        dirPrefix = self.currentRun.getModelDir() + "/"
-        
+    def _upload_output_files(self):    
         outputFileSize = len(self.currentRun.metadata()["output"])
+        
         if outputFileSize > 1:
             temp = tempfile.NamedTemporaryFile(delete=False)
             temp.close()
