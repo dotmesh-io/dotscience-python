@@ -454,7 +454,7 @@ class Dotscience:
             tar.add(f, arcname=remove_prefix(f, dirPrefix))
         tar.close()
 
-    def _upload_output_files(self):    
+    def _upload_output_files(self):
         outputFileSize = len(self.currentRun.metadata()["output"])
         
         if outputFileSize > 1:
@@ -468,7 +468,7 @@ class Dotscience:
             self._uploadArchive(temp.name, self.currentRun.getModelDir())
             os.remove(temp.name)
         elif outputFileSize == 1:
-            self._uploadArchive(self.currentRun.metadata()["output"][0], self.currentRun.getModelDir())
+            self._upload(self.currentRun.metadata()["output"][0])
         
         print(".\n", end="")
         sys.stdout.flush()
