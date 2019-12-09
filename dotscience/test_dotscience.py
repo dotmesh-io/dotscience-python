@@ -257,14 +257,14 @@ def test_run_tensorflow_model_with_classes(name,x,c):
 @given(text(),sampled_from(output_files),sampled_from(output_files))
 def test_run_sklearn_model(name,x,c):
     assume(x != c)
-    r = dotscience.Run("./test_dir")
-    xpath = tidy_path("./test_dir/" + x)
-    relxpath = os.path.relpath(xpath,start="./test_dir/")
+    r = dotscience.Run("/workspace-root")
+    xpath = tidy_path("/workspace-root/"+x)
+    relxpath = os.path.relpath(xpath,start="/workspace-root")
+
     if os.path.exists(xpath):
         os.remove(xpath)
 
-    assert r.sklearn_model(MockSKLearn(), object(), name, xpath) == xpath
-    assert os.path.exists(xpath)
+    assert r.model(MockSKLearn(), name, xpath) == xpath
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
                         "summary": {},
@@ -273,7 +273,6 @@ def test_run_sklearn_model(name,x,c):
                         "output": sorted([relxpath]),
                         "labels": {"artefact:"+name: "{\"files\":{\"model\":\"" + relxpath + "\"},\"type\":\"sklearn-model\",\"version\":\"0.21.3\"}"},
     }, sort_keys=True, indent=4), r._id)
-    os.remove(xpath)
 
 @given(text())
 def test_run_labels_1(x):
