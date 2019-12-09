@@ -1,6 +1,6 @@
 # Emacs backup files
 *~
-
+.vscode
 # Temporary dockerfile
 Dockerfile.python.tmp
 
