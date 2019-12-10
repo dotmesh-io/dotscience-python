@@ -11,6 +11,27 @@ import shutil
 from hypothesis import given, assume, note
 from hypothesis.strategies import text, lists, sampled_from
 
+
+def test_metric_to_summary_backwards_compatibility():
+    """summary()/add_summary()/add_summaries() backwards compatibility."""
+    # Run level:
+    r = dotscience.Run("/workspace-root")
+    assert r.summary == r.metric
+    assert r.add_summary == r.add_metric
+    assert r.add_summaries == r.add_metrics
+
+    # Dotscience level:
+    d = dotscience.Dotscience()
+    assert d.summary == d.metric
+    assert d.add_summary == d.add_metric
+    assert d.add_summaries == d.add_metrics
+
+    # Module level:
+    assert dotscience.summary == dotscience.metric
+    assert dotscience.add_summary == dotscience.add_metric
+    assert dotscience.add_summaries == dotscience.add_metrics
+
+
 ###
 ### Test the Run class
 ###
@@ -28,7 +49,7 @@ def test_run_null():
 
 input_files=["test.csv","/workspace-root/test.csv","data/test.csv"]
 output_files=["test.csv","/workspace-root/test.csv","data/test.csv"]
-    
+
 @given(text(),text())
 def test_run_basics(error, description):
     r = dotscience.Run("/workspace-root")
@@ -305,7 +326,7 @@ def test_run_labels_multi(a,b,c,d):
 @given(text())
 def test_run_summary_1(x):
     r = dotscience.Run("/workspace-root")
-    assert r.summary("food", x) == x
+    assert r.metric("food", x) == x
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
                         "labels": {},
@@ -318,9 +339,9 @@ def test_run_summary_1(x):
 @given(text(),text(),text(),text())
 def test_run_summary_multi(a,b,c,d):
     r = dotscience.Run("/workspace-root")
-    r.add_summaries("a", a)
-    r.add_summaries(b=b)
-    r.add_summaries("c", c, d=d)
+    r.add_metrics("a", a)
+    r.add_metrics(b=b)
+    r.add_metrics("c", c, d=d)
     assert str(r) == """[[DOTSCIENCE-RUN:%s]]%s[[/DOTSCIENCE-RUN:%s]]""" % \
     (r._id, json.dumps({"version": "1",
                         "labels": {},
@@ -770,7 +791,7 @@ def test_label_n(a, b):
 def test_summary_1a(d):
     s=io.StringIO()
     dotscience.start()
-    dotscience.add_summary("test", d)
+    dotscience.add_metric("test", d)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
     assert m["output"] == []
@@ -784,7 +805,7 @@ def test_summary_1a(d):
 def test_summary_1b(d):
     s=io.StringIO()
     dotscience.start()
-    assert dotscience.summary("test", d) == d
+    assert dotscience.metric("test", d) == d
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
     assert m["output"] == []
@@ -798,8 +819,8 @@ def test_summary_1b(d):
 def test_summary_n(a, b):
     s=io.StringIO()
     dotscience.start()
-    dotscience.add_summaries("a", a)
-    dotscience.add_summaries(b=b)
+    dotscience.add_metrics("a", a)
+    dotscience.add_metrics(b=b)
     dotscience.publish(stream=s)
     m = _parse(s.getvalue())
     assert m["output"] == []
