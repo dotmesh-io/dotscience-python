@@ -39,7 +39,7 @@ class Run:
         self._inputs = set()
         self._outputs = set()
         self._labels = {}
-        self._summary = {}
+        self._metric = {}
         self._parameters = {}
         self._start = None
         self._end = None
@@ -173,21 +173,26 @@ class Run:
         self.model(kind, name, *args, **kwargs)
         return None
 
-    def add_summary(self, label, value):
-        self._summary[str(label)] = str(value)
+    def add_metric(self, label, value):
+        self._metric[str(label)] = str(value)
 
     # Supports any combination of ("a", "val of a", "b", "val of b") and (c="val of c")
-    def add_summaries(self, *args, **kwargs):
+    def add_metrics(self, *args, **kwargs):
         if kwargs is not None:
             for key, value in kwargs.items():
-                self.add_summary(key, value)
+                self.add_metric(key, value)
         for key, value in [args[i:i+2] for i  in range(0, len(args), 2)]:
-            self.add_summary(key, value)
+            self.add_metric(key, value)
 
     # Binds a single value, but returns it unchanged
-    def summary(self, label, value):
-        self.add_summary(label, value)
+    def metric(self, label, value):
+        self.add_metric(label, value)
         return value
+
+    # Backwards compatability:
+    summary = metric
+    add_summary = add_metric
+    add_summaries = add_metrics
 
     def add_parameter(self, label, value):
         self._parameters[str(label)] = str(value)
@@ -220,7 +225,7 @@ class Run:
             "input": sorted(self._inputs),
             "output": sorted(expanded_outputs),
             "labels": self._labels,
-            "summary": self._summary,
+            "summary": self._metric,
             "parameters": self._parameters
         }
 
@@ -371,7 +376,7 @@ class Dotscience:
         # up with multiple runs with the same times (calling end() twice has no
         # effect the second time otherwise). If the user doesn't explicitly
         # call start(), it will get implicitly called after the next
-        # interaction with the python library anyway (e.g. ds.summary(), etc),
+        # interaction with the python library anyway (e.g. ds.metric(), etc),
         # via _check_started which does a lazy_start to cover resetting the
         # start timer in this case.
         self.currentRun.forget_times()
@@ -587,8 +592,8 @@ class Dotscience:
         run.452521f7-c069-4271-b06e-dcd55635b871.output-files: ["linear_regressor.pkl"]
         run.452521f7-c069-4271-b06e-dcd55635b871.parameters.features: finishedsqft
         run.452521f7-c069-4271-b06e-dcd55635b871.start: 20190924T112352.843016
-        run.452521f7-c069-4271-b06e-dcd55635b871.summary.lin_rmse: 855408.5050370345
-        run.452521f7-c069-4271-b06e-dcd55635b871.summary.regressor_score: 0.35677710327221
+        run.452521f7-c069-4271-b06e-dcd55635b871.metric.lin_rmse: 855408.5050370345
+        run.452521f7-c069-4271-b06e-dcd55635b871.metric.regressor_score: 0.35677710327221
         run.452521f7-c069-4271-b06e-dcd55635b871.workload-file: hello-dotscience.ipynb
         runner.cpu: ["1x Intel(R) Xeon(R) CPU @ 2.30GHz"]
         runner.name: 6ddeae52-untitled
@@ -655,7 +660,7 @@ class Dotscience:
         branch = dot.getBranch("master")
         result = branch.commit("Remote dotscience run", commit)
         # construct URL
-        runURL = f"{self._hostname}/project/{project['id']}/runs/summary/{self.currentRun._id}"
+        runURL = f"{self._hostname}/project/{project['id']}/runs/metric/{self.currentRun._id}"
         return runURL
 
     def _find_model_id(self, run_id):
@@ -888,17 +893,22 @@ class Dotscience:
         self._check_started()
         self.currentRun.add_labels(*args, **kwargs)
 
-    def add_summary(self, label, value):
+    def add_metric(self, label, value):
         self._check_started()
-        self.currentRun.add_summary(label, value)
+        self.currentRun.add_metric(label, value)
 
-    def add_summaries(self, *args, **kwargs):
+    def add_metrics(self, *args, **kwargs):
         self._check_started()
-        self.currentRun.add_summaries(*args, **kwargs)
+        self.currentRun.add_metrics(*args, **kwargs)
 
-    def summary(self, label, value):
+    def metric(self, label, value):
         self._check_started()
-        return self.currentRun.summary(label, value)
+        return self.currentRun.metric(label, value)
+
+    # Backwards compatibility:
+    add_summary = add_metric
+    add_summaries = add_metrics
+    summary = metric
 
     def add_parameter(self, label, value):
         self._check_started()
@@ -982,14 +992,14 @@ def add_labels(*args, **kwargs):
 def label(label, value):
     return _defaultDS.label(label, value)
 
-def add_summary(label, value):
-    _defaultDS.add_summary(label, value)
+def add_metric(label, value):
+    _defaultDS.add_metric(label, value)
 
-def add_summaries(*args, **kwargs):
-    _defaultDS.add_summaries(*args, **kwargs)
+def add_metrics(*args, **kwargs):
+    _defaultDS.add_metrics(*args, **kwargs)
 
-def summary(label, value):
-    return _defaultDS.summary(label, value)
+def metric(label, value):
+    return _defaultDS.metric(label, value)
 
 def model(kind, name, *args, **kwargs):
     return _defaultDS.model(kind, name, *args, **kwargs)
@@ -1006,9 +1016,9 @@ def parameter(label, value):
 def remove_prefix(text, prefix):
     return text[text.startswith(prefix) and len(prefix):]
 
-add_metric = add_summary
-add_metrics = add_summaries
-metric = summary
+add_metric = add_metric
+add_metrics = add_metrics
+metric = metric
 param = parameter
 
 def debug():
@@ -1022,3 +1032,7 @@ def connect(username, apikey, project, hostname=""):
         username, apikey, project, hostname,
     )
 
+# Backwards compatibility:
+summary = metric
+add_summary = add_metric
+add_summaries = add_metrics

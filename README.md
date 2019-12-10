@@ -45,7 +45,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ## Quick Start
 
-The most basic usage is to record what data files you read and write, and maybe to declare some summary statistics about how well the job went.
+The most basic usage is to record what data files you read and write, and maybe to declare some metrics about how well the job went.
 
 ```python
 import dotscience as ds
@@ -61,8 +61,8 @@ df = pd.read_csv(ds.input('input_file.csv'))
 # Likewise with files you write to:
 df.to_csv(ds.output('output_file.csv'))
 
-# Record a summary statistic about how well your job went
-ds.add_summary('f-score', f_score)
+# Record a metric about how well your job went
+ds.add_metric('f-score', f_score)
 
 ds.publish('Did some awesome data science!')
 ```
@@ -118,7 +118,7 @@ ds.publish("trained mnist model", deploy=True)
 
 ## All the things you can record
 
-There's a lot more than just data files and summary stats that Dotscience will keep track of for you - and there's a choice of convenient ways to specify each thing, so it can fit neatly into your code. Here's the full list:
+There's a lot more than just data files and metrics that Dotscience will keep track of for you - and there's a choice of convenient ways to specify each thing, so it can fit neatly into your code. Here's the full list:
 
 ### Start and end time
 
@@ -377,11 +377,11 @@ ds.add_labels(experimental=True, mode="test")
 ds.publish('Did some awesome data science!')
 ```
 
-### Summary statistics
+### Metrics
 
-Often, your job will be able to measure its own performance in some way - perhaps testing how well a model trained on some training data works when tested on some test data. If you declare those summary statistics to Dotscience, it can help you keep track of which runs produced the best results.
+Often, your job will be able to measure its own performance in some way - perhaps testing how well a model trained on some training data works when tested on some test data. If you declare those metrics to Dotscience, it can help you keep track of which runs produced the best results.
 
-As usual, this can be done while returning the summary value with `summary()`, explicitly with `add_summary()`, or en mass with `add_summaries()`:
+As usual, this can be done while returning the metric with `metric()`, explicitly with `add_metric()`, or en mass with `add_metrics()`:
 
 ```python
 import dotscience as ds
@@ -389,11 +389,11 @@ import dotscience as ds
 ds.script()
 ds.start()
 
-print('Fit: %f%%' % (ds.summary('fit%', fit),))
+print('Fit: %f%%' % (ds.metric('fit%', fit),))
 
-ds.add_summary('fit%', fit)
+ds.add_metric('fit%', fit)
 
-ds.add_summaries(fit=computeFit(), error=computeMeanError())
+ds.add_metrics(fit=computeFit(), error=computeMeanError())
 
 ds.publish('Did some awesome data science!')
 ```
@@ -439,7 +439,7 @@ ds.publish('Trained the model')
 ds.start()
 test_data = load_csv(ds.input('test.csv'))
 accuracy = test_model(model, test_data)
-ds.add_summary('accuracy', accuracy)
+ds.add_metric('accuracy', accuracy)
 ds.publish('Tested the model')
 ```
 
@@ -467,7 +467,7 @@ for smoothing in [1.0, 1.5, 2.0]:
     accuracy = test_model(model, test_data)
 
     # Inform Dotscience of the accuracy
-    ds.add_summary('accuracy', accuracy)
+    ds.add_metric('accuracy', accuracy)
 
     # Publish this run
     ds.publish('Tested the model with smoothing %s' % (smoothing,))
