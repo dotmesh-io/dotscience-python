@@ -390,7 +390,7 @@ class Dotscience:
 
         self._get_project_or_create(self._project_name, verbose=True)
 
-        print("*  Uploading output/model files", end="")
+        print("*  Uploading output/model files\n", end="")
         self._upload_output_files()
         # - Craft the commit metadata for the run and call the Commit() API
         #   directly on dotmesh on the hub
@@ -546,21 +546,9 @@ class Dotscience:
                     'Extract' : 'true',
                 }
 
-                scheme, hostname = self._hostname.split("://")
-                if scheme == "http":
-                    conn = http.client.HTTPConnection(hostname)
-                elif scheme == "https":
-                    conn = http.client.HTTPSConnection(hostname)
-                else:
-                    raise Exception("Unsupported scheme %s", scheme)
-
                 try:
-                    R = conn.request(
-                        "PUT",
-                        self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{path}",
-                        f,
-                        headers, # {"Content-Type": "application/json", "Accept": "application/json"},
-                    )
+                    R = requests.put(self._hostname+f"/v2/dotmesh/s3/{self._auth[0]}:{dotName}/{path}", f, headers=headers)                    
+
                     # Success, return - otherwise we'll retry
                     return
                 except Exception as e:
