@@ -1,5 +1,5 @@
 name = "dotscience"
-__version__ = '0.8.6'
+__version__ = '0.8.7'
 
 import json
 import datetime
@@ -588,7 +588,7 @@ class Dotscience:
         runner.platform: linux
         runner.platform_version: Linux 096f216f707b 4.15.0-1037-gcp #39-Ubuntu SMP Wed Jul 3 06:28:59 UTC 2019 x86_64 Linux
         runner.ram: 3872563200
-        runner.version: Runner=Dotscience Docker Executor rev. 0.8.6 Agent=0.11.1
+        runner.version: Runner=Dotscience Docker Executor rev. 0.8.7 Agent=0.11.1
         runs: ["452521f7-c069-4271-b06e-dcd55635b871"]
         timestamp: 1569324234537654474
         type: dotscience.run.v1
