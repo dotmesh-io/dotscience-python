@@ -75,17 +75,19 @@ model.fit(x_train, y_train,
           epochs=epochs,
           verbose=1,
           validation_data=(x_test, y_test))
+
 score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', ds.metric("loss", score[0]))
 print('Test accuracy:', ds.metric("accuracy", score[1]))
 
-#model.save("model.h5")
-#tf.keras.experimental.export_saved_model(model, ds.model(tf, 'model'))
-
 if os.path.isdir("model"):
     shutil.rmtree("model", ignore_errors=True)
 
-tf.keras.experimental.export_saved_model(model, ds.output('model'))
+MODEL_DIR = "./model"
+export_path = os.path.join(MODEL_DIR)
+
+model.save(export_path)
+
 # copy file into the model dir for the upload
 shutil.copyfile("classes.json", "model/classes.json")
 
