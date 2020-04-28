@@ -1,0 +1,7 @@
+# Dockerfile for case where we have a predict.py.
+FROM quay.io/dotmesh/ds-python-model-base
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY predict.py user_predict.py

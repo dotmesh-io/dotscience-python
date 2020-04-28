@@ -1,0 +1,2 @@
+# Notebooks are generated at packaging time.
+*.ipynb

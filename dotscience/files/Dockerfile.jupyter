@@ -1,0 +1,11 @@
+# Dockerfile for case where we have a predict.ipynb.
+FROM quay.io/dotmesh/ds-python-model-base
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY predict.ipynb user_predict.ipynb
+RUN pip install jupytext
+
+# Convert user_predict.ipynb to user_predict.py:
+RUN jupytext --to py user_predict.ipynb
