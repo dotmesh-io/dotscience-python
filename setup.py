@@ -10,11 +10,11 @@ def ensure_ipynb():
     Make sure all generated .ipynb are newer than their corresponding source .py
     file.
     """
-    for py in glob.glob("dotscience/files/*.predict.py"):
+    for py in glob.glob("dotscience/model-template-files/*.predict.py"):
         ipynb = py[:-2] + "ipynb"
-        if not os.path.exists():
+        if not os.path.exists(ipynb):
             return False
-        if os.stat(py).mtime >= os.stat(ipynb).mtime:
+        if os.stat(py).st_mtime >= os.stat(ipynb).st_mtime:
             return False
     return True
 if not ensure_ipynb():
@@ -32,6 +32,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=['datadots-api>=0.2.1', 'requests', "joblib==0.14.0"],
     tests_require=['pytest', 'hypothesis', 'datadots-api>=0.2.1'],
+    package_data={"dotscience": ["model-template-files/*"]},
     zip_safe=True,
     classifiers=[
         "Programming Language :: Python :: 3",

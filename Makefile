@@ -1,6 +1,6 @@
 .PHONY: generate-ipynb
 generate-ipynb:
-	jupytext --to notebook dotscience/files/*.predict.py
+	jupytext --to notebook dotscience/model-template-files/*.predict.py
 
 .PHONY: install-local
 install-local: generate-ipynb
