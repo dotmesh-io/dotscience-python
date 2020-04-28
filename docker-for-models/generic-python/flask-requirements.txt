@@ -1,0 +1,3 @@
+# TODO rename this to requirements.in and generate actual flask-requirements.txt
+# using pip-compile.
+flask>=1.1
