@@ -1,4 +1,9 @@
+import os
 import joblib
+
+# The model is expected to be in a file called model.joblib in th same directory
+# as this file:
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.joblib")
 
 
 def predict(model, query):
@@ -26,16 +31,6 @@ def predict(model, query):
     return {"predictions": result}
 
 
-def load_model(path):
-    """Load an sklearn model."""
-    return joblib.load(path)
-
-
-def save_model(model, path):
-    """Save a model to disk."""
-    joblib.dump(model, path)
-
-
 # You should customize this with inputs to the predict() function and their
 # expected output, and then test() below will test your predict() function using
 # them.
@@ -43,7 +38,17 @@ def save_model(model, path):
 # Specifically, this should be a list of tuples, each of the form (input,
 # output) where input will be passed to predict() and output should match
 # predict()'s result.
-TEST_PAIRS = []
+TEST_PAIRS = []  # <-- ADD SOME (input, output) PAIRS!
+
+
+def load_model():
+    """Load an sklearn model."""
+    return joblib.load(MODEL_PATH)
+
+
+def save_model(model):
+    """Save a model to disk."""
+    joblib.dump(model, MODEL_PATH)
 
 
 def test():
@@ -52,13 +57,13 @@ def test():
 
     You should fill some values in once your model is implemented, so you can
     ensure your prediction logic works as expected.
-
-    This expects you have a "model.joblib" file on disk already in same
-    directory as this file.
     """
-    import os, json
-    model = load_model(os.path.join(os.path.dirname(__file__), "model.joblib"))
+    import json, tempfile
 
+    # 1. Make sure we can load the model:
+    model = load_model()
+
+    # 2. Make sure we can run some queries:
     for input_query, expected_output in TEST_PAIRS:
         output = predict(model, input_query)
         assert output == expected_output

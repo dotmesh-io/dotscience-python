@@ -40,13 +40,15 @@ def models():
 def http_predict():
     data = request.get_json(force=True)
     try:
-        return jsonify(user_predict.predict(user_predict.MODEL, data))
+        model = app.config["MODEL"]
+        return jsonify(user_predict.predict(model, data))
     except Exception as e:
         logging.exception("Failed to predict")
         raise Exception("Failed to predict %s" % e)
 
 
 if __name__ == "__main__":
+    app.config["MODEL"] = user_predict.load_model()
     host = os.environ.get("FLASK_HOST", "0.0.0.0")
     port = os.environ.get("FLASK_PORT", "8501")
     app.run(host=host, port=port)
