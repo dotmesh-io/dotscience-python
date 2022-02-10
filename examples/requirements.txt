@@ -1,4 +1,4 @@
-tensorflow==2.1.0
+tensorflow==2.5.3
 joblib==0.14.0
 numpy >= 1.8.2
 dotscience>=0.8.7
